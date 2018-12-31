@@ -1,4 +1,4 @@
-package me.aymen.anes.anes;
+package me.aymen.anes;
 
 /**
  * Processor Instructions. The suffix indicate the following addressing modes:

@@ -1,4 +1,4 @@
-package me.aymen.anes.anes;
+package me.aymen.anes;
 
 /**
  * Hello world!
