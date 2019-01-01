@@ -1,6 +1,5 @@
 package me.aymen.anes;
 
-import me.aymen.anes.RAM;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -100,4 +99,81 @@ public class InstructionTest {
         assertEquals(false, cpu.getFlags().V);
         assertEquals(true, cpu.getFlags().S);
     }
+
+    /**
+     * Test AND of a zero page address
+     */
+    @Test
+    public void testANDZpg() {
+        ram.memory[0x0] = 0xFC;
+        ram.memory[0x1] = 0x13;
+
+        cpu.adc(0x0);
+        cpu.and(0x1);
+
+        assertEquals(0x10,cpu.getA());
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(false, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testASL() {
+        assertEquals(0x96, cpu.asl(0xCB));
+        assertEquals(true, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().S);
+
+    }
+
+    @Test
+    public void testBIT() {
+        ram.memory[0x0] = 0xA6;
+        ram.memory[0x1] = 0xE0;
+
+        cpu.adc(0x0);
+        cpu.bit(0x1);
+
+        assertEquals(0xA6,cpu.getA());
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().V);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
+    /**
+     * Test branching takes place. No actual branching operation is tested
+     */
+    @Test
+    public void testBranch() {
+        ram.memory[0x1] = 0x03; // Jump to 0x05
+
+        cpu._branch(true);
+
+        assertEquals(0x05,cpu.getPC());
+    }
+
+    @Test
+    public void testCMP() {
+        ram.memory[0x0] = 0xF6;
+        ram.memory[0x1] = 0x18;
+
+        cpu.adc(0x0);
+        cpu._compare(cpu.getA(), 0x1);
+
+        assertEquals(true, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testDEC() {
+        ram.memory[0x0] = 0xA5;
+
+        cpu.dec(0x0);
+
+        assertEquals(0xA4, ram.memory[0x0]);
+        assertEquals(false, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
 }
