@@ -25,7 +25,7 @@ public class CPU {
 
         int address = 0;
 
-        switch (ram.memory[PC]) {
+        switch (ram.memory[PC++]) {
 
             // ADC
             case Inst.ADC_PRE:
@@ -46,7 +46,7 @@ public class CPU {
                 break;
             case Inst.ADC_POS:
                 cycles+=5;
-                adc(pos());
+                adc(pos(true));
                 break;
             case Inst.ADC_ZPGX:
                 cycles+=4;
@@ -80,7 +80,7 @@ public class CPU {
                 break;
             case Inst.AND_POS:
                 cycles+=5;
-                and(pos());
+                and(pos(true));
                 break;
             case Inst.AND_ZPGX:
                 cycles+=4;
@@ -99,7 +99,7 @@ public class CPU {
             case Inst.ASL_ZPG:
                 cycles+=5;
                 address = zpg();
-                ram.memory[address] = asl(ram.memory[zpg()]);
+                ram.memory[address] = asl(ram.memory[address]);
                 break;
             case Inst.ASL_ACC:
                 cycles+=2;
@@ -201,7 +201,7 @@ public class CPU {
                 break;
             case Inst.CMP_POS:
                 cycles+=5;
-                _compare(A, pos());
+                _compare(A, pos(true));
                 break;
             case Inst.CMP_ZPGX:
                 cycles+=4;
@@ -290,7 +290,7 @@ public class CPU {
                 break;
             case Inst.EOR_POS:
                 cycles+=5;
-                eor(pos());
+                eor(pos(true));
             case Inst.EOR_ZPGX:
                 cycles+=4;
                 eor(zpgIndx(X));
@@ -365,7 +365,7 @@ public class CPU {
                 break;
             case Inst.LDA_POS:
                 cycles+=5;
-                lda(pos());
+                lda(pos(true));
                 break;
             case Inst.LDA_ZPGX:
                 cycles+=4;
@@ -422,6 +422,289 @@ public class CPU {
             case Inst.LDY_ABSX:
                 cycles+=4;
                 ldy(indx(X, false));
+                break;
+
+            // LSR
+            case Inst.LSR_ZPG:
+                cycles+=5;
+                address = zpg();
+                ram.memory[address] = lsr(ram.memory[address]);
+                break;
+            case Inst.LSR_ACC:
+                cycles+=2;
+                A = lsr(A);
+                break;
+            case Inst.LSR_ABS:
+                cycles+=6;
+                address = abs();
+                ram.memory[address] = lsr(ram.memory[address]);
+                break;
+            case Inst.LSR_ZPGX:
+                cycles+=6;
+                address = zpgIndx(X);
+                ram.memory[address] = lsr(ram.memory[address]);
+                break;
+            case Inst.LSR_ABSX:
+                cycles+=7;
+                address = zpgIndx(X);
+                ram.memory[address] = lsr(ram.memory[address]);
+                break;
+
+            case Inst.NOP:
+                cycles+=2;
+                break;
+
+            // ORA
+            case Inst.ORA_PRE:
+                cycles+=6;
+                ora(pre());
+                break;
+            case Inst.ORA_ZPG:
+                cycles+=3;
+                ora(zpg());
+                break;
+            case Inst.ORA_IMM:
+                cycles+=2;
+                ora(imm());
+                break;
+            case Inst.ORA_ABS:
+                cycles+=4;
+                ora(abs());
+                break;
+            case Inst.ORA_POS:
+                cycles+=5;
+                ora(pos(true));
+                break;
+            case Inst.ORA_ZPGX:
+                cycles+=4;
+                ora(zpgIndx(X));
+                break;
+            case Inst.ORA_ABSY:
+                cycles+=4;
+                ora(indx(Y, true));
+                break;
+            case Inst.ORA_ABSX:
+                cycles+=4;
+                ora(indx(X, true));
+                break;
+
+            case Inst.PHA:
+                cycles+=3;
+                ph(A);
+                break;
+            case Inst.PHP:
+                cycles+=3;
+                ph(P.getStatus());
+                break;
+            case Inst.PLA:
+                cycles+=4;
+                A = pl();
+                P.setZSFlags(A);
+                break;
+            case Inst.PLP:
+                cycles+=4;
+                P.setStatus(pl());
+                break;
+
+            // ROL
+            case Inst.ROL_ZPG:
+                cycles+=5;
+                address = zpg();
+                ram.memory[address] = rol(ram.memory[address]);
+                break;
+            case Inst.ROL_ACC:
+                cycles+=2;
+                A = rol(A);
+                break;
+            case Inst.ROL_ABS:
+                cycles+=6;
+                address = abs();
+                ram.memory[address] = rol(ram.memory[address]);
+                break;
+            case Inst.ROL_ZPGX:
+                cycles+=6;
+                address = zpgIndx(X);
+                ram.memory[address] = rol(ram.memory[address]);
+                break;
+            case Inst.ROL_ABSX:
+                cycles+=7;
+                address = zpgIndx(X);
+                ram.memory[address] = rol(ram.memory[address]);
+                break;
+
+            // ROR
+            case Inst.ROR_ZPG:
+                cycles+=5;
+                address = zpg();
+                ram.memory[address] = ror(ram.memory[address]);
+                break;
+            case Inst.ROR_ACC:
+                cycles+=2;
+                A = rol(A);
+                break;
+            case Inst.ROR_ABS:
+                cycles+=6;
+                address = abs();
+                ram.memory[address] = ror(ram.memory[address]);
+                break;
+            case Inst.ROR_ZPGX:
+                cycles+=6;
+                address = zpgIndx(X);
+                ram.memory[address] = ror(ram.memory[address]);
+                break;
+            case Inst.ROR_ABSX:
+                cycles+=7;
+                address = zpgIndx(X);
+                ram.memory[address] = ror(ram.memory[address]);
+                break;
+
+            case Inst.RTI:
+                cycles+=6;
+                rti();
+                break;
+            case Inst.RTS:
+                cycles+=6;
+                rts();
+                break;
+
+            // SBC
+            case Inst.SBC_PRE:
+                cycles+=6;
+                sbc(pre());
+                break;
+            case Inst.SBC_ZPG:
+                cycles+=3;
+                sbc(zpg());
+                break;
+            case Inst.SBC_IMM:
+                cycles+=2;
+                sbc(imm());
+                break;
+            case Inst.SBC_ABS:
+                cycles+=4;
+                sbc(abs());
+                break;
+            case Inst.SBC_POS:
+                cycles+=5;
+                sbc(pos(true));
+                break;
+            case Inst.SBC_ZPGX:
+                cycles+=4;
+                sbc(zpgIndx(X));
+                break;
+            case Inst.SBC_ABSY:
+                cycles+=4;
+                sbc(indx(Y, true));
+                break;
+            case Inst.SBC_ABSX:
+                cycles+=4;
+                sbc(indx(X, true));
+                break;
+
+            case Inst.SEC:
+                cycles+=2;
+                P.C = true;
+                break;
+            case Inst.SED:
+                // Decimal mode is disabled in NES
+                // ADC and SBC instructions will not be affected as
+                // decimal mode is not supported
+                cycles+=2;
+                P.D = true;
+                break;
+            case Inst.SEI:
+                cycles+=2;
+                P.I = true;
+                break;
+
+            // STA
+            case Inst.STA_PRE:
+                cycles+=6;
+                st(pre(), A);
+                break;
+            case Inst.STA_ZPG:
+                cycles+=3;
+                st(zpg(), A);
+                break;
+            case Inst.STA_ABS:
+                cycles+=4;
+                st(abs(), A);
+                break;
+            case Inst.STA_POS:
+                cycles+=6;
+                // Extra cycle is false as its always an extra cycle for STA
+                // than other instructions
+                st(pos(false), A);
+                break;
+            case Inst.STA_ZPGX:
+                cycles+=4;
+                st(zpgIndx(X), A);
+                break;
+            case Inst.STA_ABSY:
+                cycles+=5;
+                st(indx(Y, false), A);
+                break;
+            case Inst.STA_ABSX:
+                cycles+=5;
+                st(indx(X, false), A);
+                break;
+
+            // STX
+            case Inst.STX_ZPG:
+                cycles+=3;
+                st(zpg(), X);
+                break;
+            case Inst.STX_ABS:
+                cycles+=4;
+                st(abs(), X);
+                break;
+            case Inst.STX_ZPGY:
+                cycles+=4;
+                st(zpgIndx(Y), X);
+                break;
+
+            // STY
+            case Inst.STY_ZPG:
+                cycles+=3;
+                st(zpg(), Y);
+                break;
+            case Inst.STY_ABS:
+                cycles+=4;
+                st(abs(), Y);
+                break;
+            case Inst.STY_ZPGX:
+                cycles+=4;
+                st(zpgIndx(X), Y);
+                break;
+
+            case Inst.TAX:
+                cycles+=2;
+                X = A;
+                P.setZSFlags(X);
+                break;
+            case Inst.TAY:
+                cycles+=2;
+                Y = A;
+                P.setZSFlags(Y);
+                break;
+            case Inst.TSX:
+                cycles+=2;
+                X = ram.memory[SP];
+                P.setZSFlags(X);
+                break;
+            case Inst.TXA:
+                cycles+=2;
+                A = X;
+                P.setZSFlags(A);
+                break;
+            case Inst.TXS:
+                cycles+=2;
+                ram.memory[SP] = X;
+                break;
+            case Inst.TYA:
+                cycles+=2;
+                A = Y;
+                P.setZSFlags(A);
                 break;
 
             default:
@@ -494,12 +777,6 @@ public class CPU {
         return value;
     }
 
-    // Branch when zero flag is set
-    public void beq() {
-        PC++;
-        _branch(P.Z);
-    }
-
     // And accumulator with memory
     public void bit(int address) {
         int value = ram.memory[address];
@@ -555,8 +832,10 @@ public class CPU {
 
     // Jump to Subroutine
     public void jsr(int address) {
-        ram.memory[SP] = address >> 8;
-        ram.memory[SP - 1] = address & 0xFF;
+        // It is expected that the jsr will store the address of the third byte
+        PC--;
+        ram.memory[SP] = PC >> 8;
+        ram.memory[SP - 1] = PC & 0xFF;
         SP = SP - 2;
         PC = address;
     }
@@ -580,6 +859,90 @@ public class CPU {
         int value = ram.read(address);
         Y = value;
         P.setZSFlags(Y);
+    }
+
+    // Logical Shift Right of Accumulator or Memory
+    public int lsr(int value) {
+        int lowBit = value & 0x1;
+        value = value >> 1;
+        P.C = lowBit == 0x1;
+        P.setZFlag(value);
+        P.S = false;
+
+        return value;
+    }
+
+    // Logically OR Memory with Accumulator
+    public void ora(int address) {
+        int value = ram.read(address);
+        A = A | value;
+        P.setZSFlags(A);
+    }
+
+    // Push value into Stack
+    public void ph(int value) {
+        ram.memory[SP--] = value;
+    }
+
+    // Pull content from Stack
+    public int pl() {
+        SP++;
+        return ram.memory[SP];
+    }
+
+    // Rotate Accumulator or Memory Left through Carry
+    public int rol(int value) {
+        value = (value << 1) | (P.C ? 1 : 0);
+        P.C = (value & 0x100) == 0x100;
+        value = value & 0xFF;
+        P.setZSFlags(value);
+
+        return value;
+    }
+
+    // Rotate Accumulator or Memory Right through Carry
+    public int ror(int value) {
+        int lowBit = value & 0x01;
+        value = (P.C ? 0x80 : 0) | (value >> 1);
+        P.C = (lowBit & 0x01) == 0x01;
+        P.setZSFlags(value);
+
+        return value;
+    }
+
+    // Return from Interrupt
+    public void rti() {
+        P.setStatus(ram.memory[SP + 1]);
+        PC = ram.memory[SP + 2] | (ram.memory[SP + 3] << 8);
+        SP = SP + 3;
+    }
+
+    // Return from Subroutine
+    public void rts() {
+        PC = ram.memory[SP +1] | (ram.memory[SP + 2] << 8);
+        SP = SP + 2;
+
+        // The jsr stored the third byte as an address, so pc is
+        // incremented to point to next next instruction after return
+        PC++;
+    }
+
+    // Subtract Memory from Accumulator with Borrow
+    public void sbc(int address) {
+        // Same as ADC. The only difference is value is treated as
+        // complement value. Code repeated to avoid stack call
+        int value = 255 -  ram.read(address);
+        int result = A + value + (P.C ? 1 : 0);
+
+        result = P.setCFlag(result);
+        P.setVFlag(A, value, result);
+        A = result;
+        P.setZSFlags(A);
+    }
+
+    // Store value in Memory
+    public void st(int address, int value) {
+        ram.memory[address] = value;
     }
 
     /**
@@ -608,7 +971,7 @@ public class CPU {
             return;
 
         byte value = (byte) ram.memory[PC];
-        PC++;
+
         int oldPC = PC;
         PC += value;
         cycles++;
@@ -677,14 +1040,17 @@ public class CPU {
 
     /**
      * Post-Index Indirect Address (a.k.a. Indirect indexed addressing)
+     * @param extra Whether to consider to add extra cycle of page boundary is crossed.
+     *              Used when cycle if dependent on page boundary
      * @return
      */
-    private int pos() {
+    private int pos(boolean extra) {
         // First byte after instruction the 16 bit address.
         // Index + Y is returned
         int address = ram.memory[PC++] | (ram.memory[PC++] << 8);
 
-        if( (address & 0xFF00) != ((address + Y) & 0xFF00))
+        if( extra &&
+                ((address & 0xFF00) != ((address + Y) & 0xFF00)))
             cycles++;
 
         return address + Y;

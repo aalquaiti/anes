@@ -65,7 +65,7 @@ public class Flags {
      * @return Value supplied adjusted to reflect one byte without carry bit
      */
     public int setCFlag(int value) {
-        C = (value & 0x100) == 0x100 ? true : false;
+        C = (value & 0x100) == 0x100;
 
         return value & 0xFF;
     }
@@ -75,7 +75,7 @@ public class Flags {
      * @param value The value to set flags upon
      */
     public void setZFlag(int value) {
-        Z = (value | 0) == 0 ? true : false;
+        Z = value == 0;
     }
 
     /**
@@ -83,7 +83,7 @@ public class Flags {
      * @param value The value to set flags upon
      */
     public void setSFlag(int value) {
-        S = (value & 0x80) == 0x80 ? true : false;
+        S = (value & 0x80) == 0x80;
     }
 
     /**
@@ -92,8 +92,8 @@ public class Flags {
      */
     public void setZSFlags(int value) {
         // Repeated as to avoid another method call stack
-        Z = (value | 0) == 0 ? true : false;
-        S = (value & 0x80) == 0x80 ? true : false;
+        Z = value == 0;
+        S = (value & 0x80) == 0x80;
     }
 
     /**
@@ -132,5 +132,20 @@ public class Flags {
         }
 
         return result;
+    }
+
+    /**
+     * Set flags by given value.
+     * @param value
+     */
+    public void setStatus(int value) {
+        C = (value & 0x01) == 0x01;
+        Z = (value & 0x02) == 0x02;
+        I = (value & 0x04) == 0x04;
+        D = (value & 0x08) == 0x08;
+        B = (value & 0x010) == 0x10;
+        U = true;
+        V = (value & 0x40) == 0x40;
+        S = (value & 0x80) == 0x80;
     }
 }

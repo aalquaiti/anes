@@ -139,4 +139,86 @@ public interface Inst {
     int LDY_ABS = 0xAC;
     int LDY_ZPGX = 0xB4;
     int LDY_ABSX = 0xBC;
+
+    // LSR
+    int LSR_ZPG = 0x46;
+    int LSR_ACC = 0x4A;
+    int LSR_ABS = 0x4E;
+    int LSR_ZPGX = 0x56;
+    int LSR_ABSX = 0x5E;
+
+    int NOP = 0xEA;
+
+    // ORA
+    int ORA_PRE = 0x01;
+    int ORA_ZPG = 0x05;
+    int ORA_IMM = 0x09;
+    int ORA_ABS = 0x0D;
+    int ORA_POS = 0x11;
+    int ORA_ZPGX = 0x15;
+    int ORA_ABSY = 0x19;
+    int ORA_ABSX = 0x1D;
+
+    int PHA = 0x48;
+    int PHP = 0x08;
+    int PLA = 0x68;
+    int PLP = 0x28;
+
+    // ROL
+    int ROL_ZPG = 0x26;
+    int ROL_ACC = 0x2A;
+    int ROL_ABS = 0x2E;
+    int ROL_ZPGX = 0x36;
+    int ROL_ABSX = 0X3E;
+
+    // ROR
+    int ROR_ZPG = 0x66;
+    int ROR_ACC = 0x6A;
+    int ROR_ABS = 0x6E;
+    int ROR_ZPGX = 0x76;
+    int ROR_ABSX = 0X7E;
+
+    int RTI = 0x40;
+    int RTS = 0x60;
+
+    // SBC
+    int SBC_PRE = 0xE1;
+    int SBC_ZPG = 0xE5;
+    int SBC_IMM = 0xE9;
+    int SBC_ABS = 0xED;
+    int SBC_POS = 0xF1;
+    int SBC_ZPGX = 0xF5;
+    int SBC_ABSY = 0xF9;
+    int SBC_ABSX = 0xFD;
+
+
+    int SEC = 0x38;
+    int SED = 0xF8;
+    int SEI = 0x78;
+
+    // STA
+    int STA_PRE = 0x81;
+    int STA_ZPG = 0x85;
+    int STA_ABS = 0x8D;
+    int STA_POS = 0x91;
+    int STA_ZPGX = 0x95;
+    int STA_ABSY = 0x99;
+    int STA_ABSX = 0x9D;
+
+    // STX
+    int STX_ZPG = 0x86;
+    int STX_ABS = 0x8E;
+    int STX_ZPGY = 0x96;
+
+    // STY
+    int STY_ZPG = 0x84;
+    int STY_ABS = 0x8C;
+    int STY_ZPGX = 0x94;
+
+    int TAX = 0xAA;
+    int TAY = 0xA8;
+    int TSX = 0xBA;
+    int TXA = 0X8A;
+    int TXS = 0x9A;
+    int TYA = 0x98;
 }

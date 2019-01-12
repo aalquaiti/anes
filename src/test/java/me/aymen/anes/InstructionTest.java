@@ -144,11 +144,11 @@ public class InstructionTest {
      */
     @Test
     public void testBranch() {
-        ram.memory[0x1] = 0x03; // Jump to 0x05
+        ram.memory[0x01] = 0x03; // Jump to 0x05
 
         cpu._branch(true);
 
-        assertEquals(0x05,cpu.getPC());
+        assertEquals(0x04,cpu.getPC());
     }
 
     @Test
@@ -212,4 +212,77 @@ public class InstructionTest {
         assertEquals(true, cpu.getFlags().S);
     }
 
+    @Test
+    public void testLSR() {
+        ram.memory[0x0] =  cpu.lsr(0x0D);
+        cpu.lda(0x0);
+
+        assertEquals(0x06, cpu.getA());
+        assertEquals(true, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(false, cpu.getFlags().S);
+    }
+
+
+    @Test
+    public void testORA() {
+        ram.memory[0x0] = 0xE3;
+        ram.memory[0x1] = 0xAB;
+
+        cpu.lda(0x1);
+        cpu.ora(0x0);
+
+        assertEquals(0xEB, cpu.getA());
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testROL() {
+        int value = cpu.rol(0x2E);
+
+        assertEquals(0x5C, value);
+        assertEquals(false, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(false, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testROR() {
+        cpu.getFlags().C = true;
+        int value = cpu.ror(0xED);
+
+        assertEquals(0xF6, value);
+        assertEquals(true, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testSBC() {
+        ram.memory[0x00] = 0x34;
+        ram.memory[0x01] = 0x14;
+
+        cpu.lda(0x01);
+        cpu.sbc(0x00);
+
+        assertEquals(0xDF, cpu.getA());
+        assertEquals(false, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(false, cpu.getFlags().V);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testSTA() {
+        ram.memory[0x00] = 0x63;
+        cpu.lda(0x00);
+        cpu.st(0x01, cpu.getA());
+
+        assertEquals(0x63, ram.memory[0x01]);
+        assertEquals(false, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(false, cpu.getFlags().V);
+        assertEquals(false, cpu.getFlags().S);
+    }
 }
