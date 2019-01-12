@@ -164,14 +164,50 @@ public class InstructionTest {
         assertEquals(true, cpu.getFlags().S);
     }
 
+
     @Test
     public void testDEC() {
         ram.memory[0x0] = 0xA5;
 
-        cpu.dec(0x0);
+        cpu.inc(0xFF, 0x0);
 
         assertEquals(0xA4, ram.memory[0x0]);
         assertEquals(false, cpu.getFlags().C);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testEOR() {
+        ram.memory[0x0] = 0xE3;
+        ram.memory[0x1] = 0xA0;
+
+        cpu.adc(0x0);
+        cpu.eor(0x1);
+
+        assertEquals(0x43,cpu.getA());
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(false, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testINC() {
+        ram.memory[0x0] = 0xC0;
+
+        cpu.inc(0x01, 0x0);
+
+        assertEquals(0xC1, ram.memory[0x0]);
+        assertEquals(false, cpu.getFlags().Z);
+        assertEquals(true, cpu.getFlags().S);
+    }
+
+    @Test
+    public void testLDA() {
+        ram.memory[0x0] = 0xAA;
+
+        cpu.lda(0x0);
+
+        assertEquals(0xAA, cpu.getA());
         assertEquals(false, cpu.getFlags().Z);
         assertEquals(true, cpu.getFlags().S);
     }

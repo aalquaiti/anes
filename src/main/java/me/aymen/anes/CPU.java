@@ -47,20 +47,25 @@ public class CPU {
             case Inst.ADC_POS:
                 cycles+=5;
                 adc(pos());
+                break;
             case Inst.ADC_ZPGX:
                 cycles+=4;
                 adc(zpgIndx(X));
+                break;
             case Inst.ADC_ABSY:
                 cycles+=4;
-                adc(zpgIndx(Y));
+                adc(indx(Y, true));
+                break;
             case Inst.ADC_ABSX:
                 cycles+=4;
-                adc(zpgIndx(X));
+                adc(indx(X, true));
+                break;
 
             // AND
             case Inst.AND_PRE:
                 cycles+=6;
                 and(pre());
+                break;
             case Inst.AND_ZPG:
                 cycles+=3;
                 and(zpg());
@@ -115,6 +120,7 @@ public class CPU {
                 address = zpgIndx(X);
                 ram.memory[address] = asl(ram.memory[address]);
                 break;
+
             case Inst.BCC:
                 cycles+=2;
                 _branch(!P.C);
@@ -154,9 +160,11 @@ public class CPU {
             case Inst.BVC:
                 cycles+=2;
                 _branch(!P.V);
+                break;
             case Inst.BVS:
                 cycles+=2;
                 _branch(P.V);
+                break;
             case Inst.CLC:
                 cycles+=2;
                 P.C = false;
@@ -173,6 +181,8 @@ public class CPU {
                 cycles+=2;
                 P.I = false;
                 break;
+
+            // CMP
             case Inst.CMP_PRE:
                 cycles+=6;
                 _compare(A, pre());
@@ -205,6 +215,8 @@ public class CPU {
                 cycles+=4;
                 _compare(A, indx(X, true));
                 break;
+
+            // CPX
             case Inst.CPX_IMM:
                 cycles+=2;
                 _compare(X, imm());
@@ -217,6 +229,8 @@ public class CPU {
                 cycles+=4;
                 _compare(X, abs());
                 break;
+
+            // CPY
             case Inst.CPY_IMM:
                 cycles+=2;
                 _compare(Y, imm());
@@ -229,37 +243,190 @@ public class CPU {
                 cycles+=4;
                 _compare(Y, abs());
                 break;
+
+            // DEC
             case Inst.DEC_ZPG:
                 cycles+=5;
-                dec(zpg());
+                inc(0xFF, zpg());
                 break;
             case Inst.DEC_ABS:
                 cycles+=6;
-                dec(abs());
+                inc(0xFF, abs());
                 break;
             case Inst.DEC_ZPGX:
                 cycles+=6;
-                dec(zpg());
+                inc(0xFF, zpg());
                 break;
             case Inst.DEC_ABSX:
                 cycles+=7;
-                dec(indx(X, false));
+                inc(0xFF, indx(X, false));
                 break;
+
             case Inst.DEX:
                 cycles+=2;
-                dex();
+                inx(0xFF);
                 break;
             case Inst.DEY:
                 cycles+=2;
-                dey();
+                iny(0xFF);
+                break;
+
+            // EOR
+            case Inst.EOR_PRE:
+                cycles+=6;
+                eor(pre());
+                break;
+            case Inst.EOR_ZPG:
+                cycles+=3;
+                eor(zpg());
+                break;
+            case Inst.EOR_IMM:
+                cycles+=2;
+                eor(imm());
+                break;
+            case Inst.EOR_ABS:
+                cycles+=4;
+                eor(abs());
+                break;
+            case Inst.EOR_POS:
+                cycles+=5;
+                eor(pos());
+            case Inst.EOR_ZPGX:
+                cycles+=4;
+                eor(zpgIndx(X));
+                break;
+            case Inst.EOR_ABSY:
+                cycles+=4;
+                eor(indx(Y, true));
+                break;
+            case Inst.EOR_ABSX:
+                cycles+=4;
+                adc(indx(X, true));
+                break;
+
+            // INC
+            case Inst.INC_ZPG:
+                cycles+=5;
+                inc(0x01, zpg());
+                break;
+            case Inst.INC_ABS:
+                cycles+=6;
+                inc(0x01, abs());
+                break;
+            case Inst.INC_ZPGX:
+                cycles+=6;
+                inc(0x01, zpg());
+                break;
+            case Inst.INC_ABSX:
+                cycles+=7;
+                inc(0x01, indx(X, false));
+                break;
+
+            case Inst.INX:
+                cycles+=2;
+                inx(0x01);
+                break;
+            case Inst.INY:
+                cycles+=2;
+                iny(0x01);
+                break;
+
+            // JMP
+            case Inst.JMP_ABS:
+                cycles+=3;
+                jmp(abs());
+                break;
+            case Inst.JMP_IND:
+                cycles+=5;
+                jmp(ind());
+                break;
+
+            case Inst.JSR:
+                cycles+=6;
+                jsr(abs());
+                break;
+
+            // LDA
+            case Inst.LDA_PRE:
+                cycles+=6;
+                lda(pre());
+                break;
+            case Inst.LDA_ZPG:
+                cycles+=3;
+                lda(zpg());
+                break;
+            case Inst.LDA_IMM:
+                cycles+=2;
+                lda(imm());
+                break;
+            case Inst.LDA_ABS:
+                cycles+=4;
+                lda(abs());
+                break;
+            case Inst.LDA_POS:
+                cycles+=5;
+                lda(pos());
+                break;
+            case Inst.LDA_ZPGX:
+                cycles+=4;
+                lda(zpgIndx(X));
+                break;
+            case Inst.LDA_ABSY:
+                cycles+=4;
+                lda(indx(Y, true));
+                break;
+            case Inst.LDA_ABSX:
+                cycles+=4;
+                lda(indx(X, true));
+                break;
+
+            // LDX
+            case Inst.LDX_IMM:
+                cycles+=2;
+                ldx(imm());
+                break;
+            case Inst.LDX_ZPG:
+                cycles+=3;
+                ldx(zpg());
+                break;
+            case Inst.LDX_ABS:
+                cycles+=4;
+                ldx(abs());
+                break;
+            case Inst.LDX_ZPGY:
+                cycles+=4;
+                ldx(zpgIndx(Y));
+                break;
+            case Inst.LDX_ABSY:
+                cycles+=4;
+                ldx(indx(Y, true));
+                break;
+
+            // LDY
+            case Inst.LDY_IMM:
+                cycles+=2;
+                ldy(imm());
+                break;
+            case Inst.LDY_ZPG:
+                cycles+=3;
+                ldy(zpg());
+                break;
+            case Inst.LDY_ABS:
+                cycles+=4;
+                ldy(abs());
+                break;
+            case Inst.LDY_ZPGX:
+                cycles+=4;
+                ldy(zpgIndx(X));
+                break;
+            case Inst.LDY_ABSX:
+                cycles+=4;
+                ldy(indx(X, false));
                 break;
 
             default:
                 throw new RuntimeException("Unrecognized instruction");
         }
-
-        // TODO check and test how branching is affected by this increment
-        PC++;
     }
 
     public void start() {
@@ -355,26 +522,64 @@ public class CPU {
         P.I = true;
     }
 
-    // decrement memory (by 1)
-    public void dec(int address) {
-        int result = (ram.memory[address] + 0xFF) & 0xFF;
+    // increment memory (by value)
+    public void inc(int value, int address) {
+        int result = (ram.memory[address] + value) & 0xFF;
         ram.memory[address] = result;
-        P.setZFlag(result);
-        P.setSFlag(result);
+        P.setZSFlags(result);
     }
 
-    // decrement X register (by 1)
-    public void dex() {
-        X = (X + 0xFF) & 0xFF;
-        P.setZFlag(X);
-        P.setSFlag(X);
+    // increment X register (by value)
+    public void inx(int value) {
+        X = (X + value) & 0xFF;
+        P.setZSFlags(X);
     }
 
     // decrement Y register (by 1)
-    public void dey() {
-        X = (X + 0xFF) & 0xFF;
-        P.setZFlag(X);
-        P.setSFlag(X);
+    public void iny(int value) {
+        Y = (Y + value) & 0xFF;
+        P.setZSFlags(Y);
+    }
+
+    // Xor accumulator with memory
+    public void eor(int address) {
+        int value = ram.memory[address];
+        A = (A ^ value) & 0xFF;
+        P.setZSFlags(A);
+    }
+
+    // Jump to absolute or indirect address
+    public void jmp(int address) {
+        PC = address;
+    }
+
+    // Jump to Subroutine
+    public void jsr(int address) {
+        ram.memory[SP] = address >> 8;
+        ram.memory[SP - 1] = address & 0xFF;
+        SP = SP - 2;
+        PC = address;
+    }
+
+    // Load Accumulator from Memory
+    public void lda(int address) {
+        int value = ram.read(address);
+        A = value;
+        P.setZSFlags(A);
+    }
+
+    // Load Index Register X from Memory
+    public void ldx(int address) {
+        int value = ram.read(address);
+        X = value;
+        P.setZSFlags(X);
+    }
+
+    // Load Index Register Y from Memory
+    public void ldy(int address) {
+        int value = ram.read(address);
+        Y = value;
+        P.setZSFlags(Y);
     }
 
     /**
@@ -424,12 +629,28 @@ public class CPU {
     }
 
     /**
-     * Absolue address
+     * Absolue (direct) address
      * @return
      */
     private int abs() {
         // Read the first and second byte after instruction for ram address
         return ram.memory[PC++] | (ram.memory[PC++] << 8);
+    }
+
+    /**
+     * indirect address
+     * @return
+     */
+    private int ind() {
+        int low = ram.memory[PC++];
+        int high = ram.memory[PC++];
+        int address = low | (high << 8);
+        int value = ram.memory[address];
+        // Fixes first operand (low byte) cross page boundary
+        address = ( (low + 1) & 0xFF) | (high << 8);
+        value+= ram.memory[address] << 8;
+
+        return value;
     }
 
     /**
@@ -461,7 +682,7 @@ public class CPU {
     private int pos() {
         // First byte after instruction the 16 bit address.
         // Index + Y is returned
-        int address = ram.memory[PC++] | ( ram.memory[PC++] << 8);
+        int address = ram.memory[PC++] | (ram.memory[PC++] << 8);
 
         if( (address & 0xFF00) != ((address + Y) & 0xFF00))
             cycles++;
@@ -478,7 +699,7 @@ public class CPU {
      */
     private int indx(int register, boolean extra) {
         // First and second byte + register as a 16 bit address
-        int address = (ram.memory[PC++] | ram.memory[PC++] << 8);
+        int address = ram.memory[PC++] | (ram.memory[PC++] << 8);
 
         if ( extra && (address & 0xFF00) != ((address + Y) & 0xFF00) )
             cycles++;

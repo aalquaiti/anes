@@ -7,8 +7,10 @@ package me.aymen.anes;
  * <p>ZPG: Zero page</p>
  * <p>ACC: Accumulator</p>
  * <p>IMM: Immediate</p>
- * <p>ABS: Absolute</p>
+ * <p>ABS: Absolute (Direct)</p>
+ * <p>IND: Indirect</p>
  * <p>ZPGX: Zero page indexed with X</p>
+ * <p>ZPGY: Zero page indexed with Y</p>
  * <p>ABSX: Absolute indexed with X</p>
  * <p>ABSY: Absolute indexed with Y</p>
  */
@@ -98,4 +100,43 @@ public interface Inst {
     int EOR_ZPGX = 0x55;
     int EOR_ABSY = 0x59;
     int EOR_ABSX = 0x5D;
+
+    // INC
+    int INC_ZPG = 0xE6;
+    int INC_ABS = 0xEE;
+    int INC_ZPGX = 0xF6;
+    int INC_ABSX = 0xFE;
+
+    int INX = 0xE8;
+    int INY = 0xC8;
+
+    // JMP
+    int JMP_ABS = 0x4C;
+    int JMP_IND = 0x6C;
+
+    int JSR = 0x20;
+
+    // LDA
+    int LDA_PRE = 0xA1;
+    int LDA_ZPG = 0xA5;
+    int LDA_IMM = 0xA9;
+    int LDA_ABS = 0xAD;
+    int LDA_POS = 0xB1;
+    int LDA_ZPGX = 0xB5;
+    int LDA_ABSY = 0xB9;
+    int LDA_ABSX = 0xBD;
+
+    // LDX
+    int LDX_IMM = 0xA2;
+    int LDX_ZPG = 0xA6;
+    int LDX_ABS = 0xAE;
+    int LDX_ZPGY = 0xB6;
+    int LDX_ABSY = 0xBE;
+
+    // LDY
+    int LDY_IMM = 0xA0;
+    int LDY_ZPG = 0xA4;
+    int LDY_ABS = 0xAC;
+    int LDY_ZPGX = 0xB4;
+    int LDY_ABSX = 0xBC;
 }
