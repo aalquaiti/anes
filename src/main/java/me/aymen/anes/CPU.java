@@ -3,7 +3,7 @@ package me.aymen.anes;
 public class CPU {
 
     // CPU Components
-    private RAM ram;
+    private Memory memory;
     private int cycles;
 
     // Registers
@@ -14,18 +14,18 @@ public class CPU {
     private int SP;         // Stack Pointer
     private Flags P;        // Process Status
 
-    public CPU() {
-        init();
+    public CPU(Memory memory) {
+        this.memory = memory;
     }
 
     /**
      * Execute instruction at current program counter
      */
     public void execute() {
+        int address;
+        int instruction = memory.read(PC++);
 
-        int address = 0;
-
-        switch (ram.memory[PC++]) {
+        switch (instruction) {
 
             // ADC
             case Inst.ADC_PRE:
@@ -99,7 +99,7 @@ public class CPU {
             case Inst.ASL_ZPG:
                 cycles+=5;
                 address = zpg();
-                ram.memory[address] = asl(ram.memory[address]);
+                memory.write(asl(memory.read(address)), address);
                 break;
             case Inst.ASL_ACC:
                 cycles+=2;
@@ -108,30 +108,30 @@ public class CPU {
             case Inst.ASL_ABS:
                 cycles+=6;
                 address = abs();
-                ram.memory[address] = asl(ram.memory[address]);
+                memory.write(asl(memory.read(address)), address);
                 break;
             case Inst.ASL_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                ram.memory[address] = asl(ram.memory[address]);
+                memory.write(asl(memory.read(address)), address);
                 break;
             case Inst.ASL_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                ram.memory[address] = asl(ram.memory[address]);
+                memory.write(asl(memory.read(address)), address);
                 break;
 
             case Inst.BCC:
                 cycles+=2;
-                _branch(!P.C);
+                branch(!P.C);
                 break;
             case Inst.BCS:
                 cycles+=2;
-                _branch(P.C);
+                branch(P.C);
                 break;
             case Inst.BEQ:
                 cycles+=2;
-                _branch(P.Z);
+                branch(P.Z);
                 break;
             case Inst.BIT_ZPG:
                 cycles+=3;
@@ -143,15 +143,15 @@ public class CPU {
                 break;
             case Inst.BMI:
                 cycles+=2;
-                _branch(P.S);
+                branch(P.S);
                 break;
             case Inst.BNE:
                 cycles+=2;
-                _branch(!P.Z);
+                branch(!P.Z);
                 break;
             case Inst.BPL:
                 cycles+=2;
-                _branch(!P.S);
+                branch(!P.S);
                 break;
             case Inst.BRK:
                 cycles+=7;
@@ -159,11 +159,11 @@ public class CPU {
                 break;
             case Inst.BVC:
                 cycles+=2;
-                _branch(!P.V);
+                branch(!P.V);
                 break;
             case Inst.BVS:
                 cycles+=2;
-                _branch(P.V);
+                branch(P.V);
                 break;
             case Inst.CLC:
                 cycles+=2;
@@ -185,63 +185,63 @@ public class CPU {
             // CMP
             case Inst.CMP_PRE:
                 cycles+=6;
-                _compare(A, pre());
+                compare(A, pre());
                 break;
             case Inst.CMP_ZPG:
                 cycles+=3;
-                _compare(A, zpg());
+                compare(A, zpg());
                 break;
             case Inst.CMP_IMM:
                 cycles+=2;
-                _compare(A, imm());
+                compare(A, imm());
                 break;
             case Inst.CMP_ABS:
                 cycles+=4;
-                _compare(A, abs());
+                compare(A, abs());
                 break;
             case Inst.CMP_POS:
                 cycles+=5;
-                _compare(A, pos(true));
+                compare(A, pos(true));
                 break;
             case Inst.CMP_ZPGX:
                 cycles+=4;
-                _compare(A, zpgIndx(X));
+                compare(A, zpgIndx(X));
                 break;
             case Inst.CMP_ABSY:
                 cycles+=4;
-                _compare(A, indx(Y, true));
+                compare(A, indx(Y, true));
                 break;
             case Inst.CMP_ABSX:
                 cycles+=4;
-                _compare(A, indx(X, true));
+                compare(A, indx(X, true));
                 break;
 
             // CPX
             case Inst.CPX_IMM:
                 cycles+=2;
-                _compare(X, imm());
+                compare(X, imm());
                 break;
             case Inst.CPX_ZPG:
                 cycles+=3;
-                _compare(X, zpg());
+                compare(X, zpg());
                 break;
             case Inst.CPX_ABS:
                 cycles+=4;
-                _compare(X, abs());
+                compare(X, abs());
                 break;
 
             // CPY
             case Inst.CPY_IMM:
                 cycles+=2;
-                _compare(Y, imm());
+                compare(Y, imm());
                 break;
             case Inst.CPY_ZPG:
                 cycles+=3;
-                _compare(Y, zpg());
+                compare(Y, zpg());
                 break;
             case Inst.CPY_ABS:
                 cycles+=4;
-                _compare(Y, abs());
+                compare(Y, abs());
                 break;
 
             // DEC
@@ -428,7 +428,7 @@ public class CPU {
             case Inst.LSR_ZPG:
                 cycles+=5;
                 address = zpg();
-                ram.memory[address] = lsr(ram.memory[address]);
+                memory.write(lsr(memory.read(address)), address);
                 break;
             case Inst.LSR_ACC:
                 cycles+=2;
@@ -437,17 +437,17 @@ public class CPU {
             case Inst.LSR_ABS:
                 cycles+=6;
                 address = abs();
-                ram.memory[address] = lsr(ram.memory[address]);
+                memory.write(lsr(memory.read(address)), address);
                 break;
             case Inst.LSR_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                ram.memory[address] = lsr(ram.memory[address]);
+                memory.write(lsr(memory.read(address)), address);
                 break;
             case Inst.LSR_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                ram.memory[address] = lsr(ram.memory[address]);
+                memory.write(lsr(memory.read(address)), address);
                 break;
 
             case Inst.NOP:
@@ -510,7 +510,7 @@ public class CPU {
             case Inst.ROL_ZPG:
                 cycles+=5;
                 address = zpg();
-                ram.memory[address] = rol(ram.memory[address]);
+                memory.write(rol(memory.read(address)), address);
                 break;
             case Inst.ROL_ACC:
                 cycles+=2;
@@ -519,24 +519,24 @@ public class CPU {
             case Inst.ROL_ABS:
                 cycles+=6;
                 address = abs();
-                ram.memory[address] = rol(ram.memory[address]);
+                memory.write(rol(memory.read(address)), address);
                 break;
             case Inst.ROL_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                ram.memory[address] = rol(ram.memory[address]);
+                memory.write(rol(memory.read(address)), address);
                 break;
             case Inst.ROL_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                ram.memory[address] = rol(ram.memory[address]);
+                memory.write(rol(memory.read(address)), address);
                 break;
 
             // ROR
             case Inst.ROR_ZPG:
                 cycles+=5;
                 address = zpg();
-                ram.memory[address] = ror(ram.memory[address]);
+                memory.write(ror(memory.read(address)), address);
                 break;
             case Inst.ROR_ACC:
                 cycles+=2;
@@ -545,17 +545,17 @@ public class CPU {
             case Inst.ROR_ABS:
                 cycles+=6;
                 address = abs();
-                ram.memory[address] = ror(ram.memory[address]);
+                memory.write(ror(memory.read(address)), address);
                 break;
             case Inst.ROR_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                ram.memory[address] = ror(ram.memory[address]);
+                memory.write(ror(memory.read(address)), address);
                 break;
             case Inst.ROR_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                ram.memory[address] = ror(ram.memory[address]);
+                memory.write(ror(memory.read(address)), address);
                 break;
 
             case Inst.RTI:
@@ -689,7 +689,7 @@ public class CPU {
                 break;
             case Inst.TSX:
                 cycles+=2;
-                X = ram.memory[SP];
+                X = memory.read(SP);
                 P.setZSFlags(X);
                 break;
             case Inst.TXA:
@@ -699,7 +699,7 @@ public class CPU {
                 break;
             case Inst.TXS:
                 cycles+=2;
-                ram.memory[SP] = X;
+                memory.write(X, SP);
                 break;
             case Inst.TYA:
                 cycles+=2;
@@ -713,24 +713,32 @@ public class CPU {
     }
 
     public void start() {
+        reset();
 
         while(true) {
             // TODO - Implement
             // increment cycles
             // execute OP_CODE code
+
+            execute();
         }
     }
 
-    public void init() {
-        ram = new RAM();
+    /**
+     * Reset the CPU to an initial state
+     */
+    public void reset() {
         cycles = 0;
 
         A = 0;
         X = 0;
         Y = 0;
-        PC = 0;
         SP = 0x01FF;
         P = new Flags();
+
+        // Must point to reset vector which is at index
+        // 0xFFFD (High) and 0xFFFC (low)
+        PC = memory.read(0xFFFC) | (memory.read(0xFFFD) << 8);
     }
 
     public int getA() {
@@ -741,17 +749,47 @@ public class CPU {
         return PC;
     }
 
-    public void setRam(RAM ram) {
-        this.ram = ram;
+
+    /**
+     * Retrieve SP to be within range 0x100 to 0x1FF
+     * @return
+     */
+    public int getSP() {
+        return SP + 0x100;
+    }
+
+    /**
+     * Decrement the stack pointer by one.
+     * The stack will always be in range 0x100 to 0x1FF, so any overflow
+     * will lead to wrapping around the range.
+     */
+    public void decSP() {
+        SP--;
+        SP &= 0x100;
+    }
+
+    /**
+     * Increment the stack pointer by one.
+     * The stack will always be in range 0x100 to 0x1FF, so any overflow
+     * will lead to wrapping around the range.
+     */
+    public void incSP() {
+        SP++;
+        SP &= 0x100;
+    }
+
+    public void setMemory(Memory memory) {
+        this.memory = memory;
     }
 
     public Flags getFlags() {
         return P;
     }
 
-    // Add memory to accumulator with carry
+    //region op code related methods
+    // Add data to accumulator with carry
     public void adc(int address) {
-        int value = ram.read(address);
+        int value = memory.read(address);
         int result = A + value + (P.C ? 1 : 0);
 
         result = P.setCFlag(result);
@@ -760,14 +798,14 @@ public class CPU {
         P.setZSFlags(A);
     }
 
-    // And memory with accumulator
+    // And data with accumulator
     public void and(int address) {
-        int value = ram.read(address);
+        int value = memory.read(address);
         A = A & value;
         P.setZSFlags(A);
     }
 
-    // Shift accumulator or memory byte left
+    // Shift accumulator or data byte left
     public int asl(int value) {
         value = value << 1;
 
@@ -777,32 +815,34 @@ public class CPU {
         return value;
     }
 
-    // And accumulator with memory
+    // And accumulator with data
     public void bit(int address) {
-        int value = ram.memory[address];
+        int value = memory.read(address);
         int result = A & value;
 
         P.setZFlag(result);
         P.setSFlag(value);
-        // Set overflow depending on the 6th bit of the memory content
+        // Set overflow depending on the 6th bit of the data content
         P.V = (value & 0x40) == 0x40 ? true : false;
     }
 
     // Force Break (Software Interrupt)
     public void brk() {
         PC+=2;
-        ram.memory[SP] = PC >> 8;
-        ram.memory[SP - 1] = PC & 0xFF;
-        ram.memory[SP - 2] = P.getStatus();
-        SP = SP - 3;
-        PC = ram.memory[0xFFFE] | (ram.memory[0xFFFF] << 8);
+        memory.write(PC >> 8, getSP());
+        decSP();
+        memory.write(PC & 0xFF, getSP());
+        decSP();
+        memory.write(P.getStatus(), getSP());
+        decSP();
+        PC = memory.read(0xFFFE) | (memory.read(0xFFFF) << 8);
         P.I = true;
     }
 
-    // increment memory (by value)
+    // increment data (by value)
     public void inc(int value, int address) {
-        int result = (ram.memory[address] + value) & 0xFF;
-        ram.memory[address] = result;
+        int result = (memory.read(address) + value) & 0xFF;
+        memory.write(result, address);
         P.setZSFlags(result);
     }
 
@@ -818,9 +858,9 @@ public class CPU {
         P.setZSFlags(Y);
     }
 
-    // Xor accumulator with memory
+    // Xor accumulator with data
     public void eor(int address) {
-        int value = ram.memory[address];
+        int value = memory.read(address);
         A = (A ^ value) & 0xFF;
         P.setZSFlags(A);
     }
@@ -834,29 +874,30 @@ public class CPU {
     public void jsr(int address) {
         // It is expected that the jsr will store the address of the third byte
         PC--;
-        ram.memory[SP] = PC >> 8;
-        ram.memory[SP - 1] = PC & 0xFF;
-        SP = SP - 2;
+        memory.write(PC >> 8, getSP());
+        decSP();
+        memory.write(PC & 0xFF, getSP());
+        decSP();
         PC = address;
     }
 
     // Load Accumulator from Memory
     public void lda(int address) {
-        int value = ram.read(address);
+        int value = memory.read(address);
         A = value;
         P.setZSFlags(A);
     }
 
     // Load Index Register X from Memory
     public void ldx(int address) {
-        int value = ram.read(address);
+        int value = memory.read(address);
         X = value;
         P.setZSFlags(X);
     }
 
     // Load Index Register Y from Memory
     public void ldy(int address) {
-        int value = ram.read(address);
+        int value = memory.read(address);
         Y = value;
         P.setZSFlags(Y);
     }
@@ -874,20 +915,21 @@ public class CPU {
 
     // Logically OR Memory with Accumulator
     public void ora(int address) {
-        int value = ram.read(address);
+        int value = memory.read(address);
         A = A | value;
         P.setZSFlags(A);
     }
 
     // Push value into Stack
     public void ph(int value) {
-        ram.memory[SP--] = value;
+        memory.write(value, getSP());
+        decSP();
     }
 
     // Pull content from Stack
     public int pl() {
-        SP++;
-        return ram.memory[SP];
+        incSP();
+        return memory.read(getSP());
     }
 
     // Rotate Accumulator or Memory Left through Carry
@@ -912,15 +954,20 @@ public class CPU {
 
     // Return from Interrupt
     public void rti() {
-        P.setStatus(ram.memory[SP + 1]);
-        PC = ram.memory[SP + 2] | (ram.memory[SP + 3] << 8);
-        SP = SP + 3;
+        incSP();
+        P.setStatus(memory.read(getSP()));
+        incSP();
+        PC = memory.read(getSP());
+        incSP();
+        PC += (memory.read(getSP()) << 8);
     }
 
     // Return from Subroutine
     public void rts() {
-        PC = ram.memory[SP +1] | (ram.memory[SP + 2] << 8);
-        SP = SP + 2;
+        incSP();
+        PC = memory.read(getSP());
+        incSP();
+        PC += (memory.read(getSP()) << 8);
 
         // The jsr stored the third byte as an address, so pc is
         // incremented to point to next next instruction after return
@@ -931,7 +978,7 @@ public class CPU {
     public void sbc(int address) {
         // Same as ADC. The only difference is value is treated as
         // complement value. Code repeated to avoid stack call
-        int value = 255 -  ram.read(address);
+        int value = 255 -  memory.read(address);
         int result = A + value + (P.C ? 1 : 0);
 
         result = P.setCFlag(result);
@@ -942,17 +989,17 @@ public class CPU {
 
     // Store value in Memory
     public void st(int address, int value) {
-        ram.memory[address] = value;
+        memory.write(value, address);
     }
 
     /**
-     * Subtract memory content from given compare value and set C, F and S
+     * Subtract data content from given compare value and set C, F and S
      * flags accordingly
      * @param cmp Value to compare
-     * @param address memory address of content to compare with
+     * @param address data address of content to compare with
      */
-    public void _compare(int cmp, int address) {
-        int value = ram.memory[address];
+    public void compare(int cmp, int address) {
+        int value = memory.read(address);
 
         // Get 2's complements of value
         int result = cmp + ((value * -1) & 0xFF);
@@ -962,15 +1009,15 @@ public class CPU {
     }
 
     /**
-     * Whether to _branch execution
+     * Whether to branch execution
      * @param cond True if branching condition is met
      */
-    public void _branch(boolean cond) {
+    public void branch(boolean cond) {
         PC++;
         if (!cond)
             return;
 
-        byte value = (byte) ram.memory[PC];
+        byte value = (byte) memory.read(PC);
 
         int oldPC = PC;
         PC += value;
@@ -996,8 +1043,8 @@ public class CPU {
      * @return
      */
     private int abs() {
-        // Read the first and second byte after instruction for ram address
-        return ram.memory[PC++] | (ram.memory[PC++] << 8);
+        // Read the first and second byte after instruction for data address
+        return memory.read(PC++) | (memory.read(PC++) << 8);
     }
 
     /**
@@ -1005,13 +1052,13 @@ public class CPU {
      * @return
      */
     private int ind() {
-        int low = ram.memory[PC++];
-        int high = ram.memory[PC++];
+        int low = memory.read(PC++);
+        int high = memory.read(PC++);
         int address = low | (high << 8);
-        int value = ram.memory[address];
+        int value = memory.read(address);
         // Fixes first operand (low byte) cross page boundary
         address = ( (low + 1) & 0xFF) | (high << 8);
-        value+= ram.memory[address] << 8;
+        value+= memory.read(address) << 8;
 
         return value;
     }
@@ -1021,8 +1068,8 @@ public class CPU {
      * @return
      */
     private int zpg() {
-        // Read first byte only after instruction for ram address
-        return ram.memory[PC++];
+        // Read first byte only after instruction for data address
+        return memory.read(PC++);
     }
 
     /**
@@ -1030,10 +1077,10 @@ public class CPU {
      * @return
      */
     private int pre() {
-        // X + first byte after instruction as ram address to access first 256 bytes of memory, which
+        // X + first byte after instruction as data address to access first 256 bytes of data, which
         // wraparound when addition is overflowed. The Index and next byte (within zero page) is considered
         // the 16 bit address
-        int index = (X + ram.memory[PC++]) & 0xFF;
+        int index = (X + memory.read(PC++)) & 0xFF;
 
         return index | ( ( (index + 1) & 0xFF) << 8) ;
     }
@@ -1047,7 +1094,7 @@ public class CPU {
     private int pos(boolean extra) {
         // First byte after instruction the 16 bit address.
         // Index + Y is returned
-        int address = ram.memory[PC++] | (ram.memory[PC++] << 8);
+        int address = memory.read(PC++) | (memory.read(PC++) << 8);
 
         if( extra &&
                 ((address & 0xFF00) != ((address + Y) & 0xFF00)))
@@ -1065,7 +1112,7 @@ public class CPU {
      */
     private int indx(int register, boolean extra) {
         // First and second byte + register as a 16 bit address
-        int address = ram.memory[PC++] | (ram.memory[PC++] << 8);
+        int address = memory.read(PC++) | (memory.read(PC++) << 8);
 
         if ( extra && (address & 0xFF00) != ((address + Y) & 0xFF00) )
             cycles++;
@@ -1080,6 +1127,12 @@ public class CPU {
      */
     private int zpgIndx(int register) {
         // Crossing page boundary is not to be handled
-        return (register + ram.memory[PC++]) & 0xFF;
+        return (register + memory.read(PC++)) & 0xFF;
+    }
+
+    //endregion
+
+    public int getCycles() {
+        return cycles;
     }
 }
