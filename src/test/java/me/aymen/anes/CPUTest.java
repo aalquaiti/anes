@@ -1,20 +1,21 @@
 package me.aymen.anes;
 
+import me.aymen.anes.memory.Bus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Test CPU instructions. Immediate addressing data is assumed if direct data is needed
+ * Test CPU instructions. Immediate addressing memory is assumed if direct memory is needed
  */
 public class CPUTest {
     CPU cpu;
-    Memory memory;
+    Bus bus;
 
     @BeforeEach
     public void setUp() {
-        memory = new Memory();
-        cpu = new CPU(memory);
+        bus = new Bus();
+        cpu = new CPU(bus);
         cpu.reset();
     }
 
@@ -23,8 +24,8 @@ public class CPUTest {
      */
     @Test
     public void testADCInit() {
-        memory.data[0x0] = 0x3A;
-        memory.data[0x1] = 0x7C;
+        bus.memory[0x0] = 0x3A;
+        bus.memory[0x1] = 0x7C;
 
         cpu.adc(0x0);
 
@@ -36,13 +37,13 @@ public class CPUTest {
     }
 
     /**
-     * Test addition of A that contain initial value with value in data, triggering overflow and
+     * Test addition of A that contain initial value with value in memory, triggering overflow and
      * sign flag
      */
     @Test
     public void testADCValue() {
-        memory.data[0x0] = 0x3A;
-        memory.data[0x1] = 0x7C;
+        bus.memory[0x0] = 0x3A;
+        bus.memory[0x1] = 0x7C;
 
         cpu.adc(0x0);
         cpu.adc(0x1);
@@ -71,8 +72,8 @@ public class CPUTest {
      */
     @Test
     public void testADCOverFlow() {
-        memory.data[0x0] = 0x50;
-        memory.data[0x1] = 0x50;
+        bus.memory[0x0] = 0x50;
+        bus.memory[0x1] = 0x50;
 
         cpu.adc(0x0);
         cpu.adc(0x1);
@@ -89,7 +90,7 @@ public class CPUTest {
      */
     @Test
     public void testADCNegative() {
-        memory.data[0x0] = 0xFF;
+        bus.memory[0x0] = 0xFF;
 
         cpu.adc(0x0);
 
@@ -105,8 +106,8 @@ public class CPUTest {
      */
     @Test
     public void testANDZpg() {
-        memory.data[0x0] = 0xFC;
-        memory.data[0x1] = 0x13;
+        bus.memory[0x0] = 0xFC;
+        bus.memory[0x1] = 0x13;
 
         cpu.adc(0x0);
         cpu.and(0x1);
@@ -127,8 +128,8 @@ public class CPUTest {
 
     @Test
     public void testBIT() {
-        memory.data[0x0] = 0xA6;
-        memory.data[0x1] = 0xE0;
+        bus.memory[0x0] = 0xA6;
+        bus.memory[0x1] = 0xE0;
 
         cpu.adc(0x0);
         cpu.bit(0x1);
@@ -144,7 +145,7 @@ public class CPUTest {
      */
     @Test
     public void testBranch() {
-        memory.data[0x01] = 0x03; // Jump to 0x05
+        bus.memory[0x01] = 0x03; // Jump to 0x05
 
         cpu.branch(true);
 
@@ -153,8 +154,8 @@ public class CPUTest {
 
     @Test
     public void testCMP() {
-        memory.data[0x0] = 0xF6;
-        memory.data[0x1] = 0x18;
+        bus.memory[0x0] = 0xF6;
+        bus.memory[0x1] = 0x18;
 
         cpu.adc(0x0);
         cpu.compare(cpu.getA(), 0x1);
@@ -167,11 +168,11 @@ public class CPUTest {
 
     @Test
     public void testDEC() {
-        memory.data[0x0] = 0xA5;
+        bus.memory[0x0] = 0xA5;
 
         cpu.inc(0xFF, 0x0);
 
-        assertEquals(0xA4, memory.data[0x0]);
+        assertEquals(0xA4, bus.memory[0x0]);
         assertEquals(false, cpu.getFlags().C);
         assertEquals(false, cpu.getFlags().Z);
         assertEquals(true, cpu.getFlags().S);
@@ -179,8 +180,8 @@ public class CPUTest {
 
     @Test
     public void testEOR() {
-        memory.data[0x0] = 0xE3;
-        memory.data[0x1] = 0xA0;
+        bus.memory[0x0] = 0xE3;
+        bus.memory[0x1] = 0xA0;
 
         cpu.adc(0x0);
         cpu.eor(0x1);
@@ -192,18 +193,18 @@ public class CPUTest {
 
     @Test
     public void testINC() {
-        memory.data[0x0] = 0xC0;
+        bus.memory[0x0] = 0xC0;
 
         cpu.inc(0x01, 0x0);
 
-        assertEquals(0xC1, memory.data[0x0]);
+        assertEquals(0xC1, bus.memory[0x0]);
         assertEquals(false, cpu.getFlags().Z);
         assertEquals(true, cpu.getFlags().S);
     }
 
     @Test
     public void testLDA() {
-        memory.data[0x0] = 0xAA;
+        bus.memory[0x0] = 0xAA;
 
         cpu.lda(0x0);
 
@@ -214,7 +215,7 @@ public class CPUTest {
 
     @Test
     public void testLSR() {
-        memory.data[0x0] =  cpu.lsr(0x0D);
+        bus.memory[0x0] =  cpu.lsr(0x0D);
         cpu.lda(0x0);
 
         assertEquals(0x06, cpu.getA());
@@ -226,8 +227,8 @@ public class CPUTest {
 
     @Test
     public void testORA() {
-        memory.data[0x0] = 0xE3;
-        memory.data[0x1] = 0xAB;
+        bus.memory[0x0] = 0xE3;
+        bus.memory[0x1] = 0xAB;
 
         cpu.lda(0x1);
         cpu.ora(0x0);
@@ -260,8 +261,8 @@ public class CPUTest {
 
     @Test
     public void testSBC() {
-        memory.data[0x00] = 0x34;
-        memory.data[0x01] = 0x14;
+        bus.memory[0x00] = 0x34;
+        bus.memory[0x01] = 0x14;
 
         cpu.lda(0x01);
         cpu.sbc(0x00);
@@ -275,11 +276,11 @@ public class CPUTest {
 
     @Test
     public void testSTA() {
-        memory.data[0x00] = 0x63;
+        bus.memory[0x00] = 0x63;
         cpu.lda(0x00);
         cpu.st(0x01, cpu.getA());
 
-        assertEquals(0x63, memory.data[0x01]);
+        assertEquals(0x63, bus.memory[0x01]);
         assertEquals(false, cpu.getFlags().C);
         assertEquals(false, cpu.getFlags().Z);
         assertEquals(false, cpu.getFlags().V);

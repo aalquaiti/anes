@@ -1,5 +1,8 @@
 package me.aymen.anes;
 
+/**
+ * Represents CPU Processor Status
+ */
 public class Flags {
 
     public Flags()

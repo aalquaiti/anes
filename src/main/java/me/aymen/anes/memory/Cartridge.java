@@ -1,4 +1,4 @@
-package me.aymen.anes;
+package me.aymen.anes.memory;
 
 import me.aymen.anes.exception.InvalidROMException;
 import org.slf4j.Logger;
@@ -10,7 +10,7 @@ import java.io.IOException;
 
 /**
  * Representes NES cartridge inserted into the system.
- * Works in conjunction with Memory Object, where SRAM and ROM data is stored
+ * Works in conjunction with Bus Object, where SRAM and ROM memory is stored
  */
 public class Cartridge {
 
@@ -23,6 +23,7 @@ public class Cartridge {
 
     private final static Logger logger =
             LoggerFactory.getLogger(Cartridge.class);
+    private final Bus bus;
     private final int HEADER_SIZE = 16;
     private byte header[];
     private byte trainer[];
@@ -31,7 +32,9 @@ public class Cartridge {
     private byte chr[];
     private int chrBank;
     private int mapperType;
-    public Cartridge() {
+
+    public Cartridge(Bus bus) {
+        this.bus = bus;
         header = new byte[HEADER_SIZE];
     }
 
@@ -69,18 +72,18 @@ public class Cartridge {
                 read = in.read(trainer);
 
                 if(read < trainer.length)
-                    throw new InvalidROMException("Trainer data failed to be" +
+                    throw new InvalidROMException("Trainer memory failed to be" +
                             "read. File might be corrupted");
                 logger.info("Trainer size: {} bytes", trainer.length);
             }
 
-            // Fourth header decides the size how many blocks PRG ROM data
+            // Fourth header decides the size how many blocks PRG ROM memory
             // got. Each block is 16384 bytes
             prgBank = header[4];
             prg = new byte[16384 * prgBank];
             read = in.read(prg);
             if(read < prg.length)
-                throw new InvalidROMException("PRG ROM data failed to be " +
+                throw new InvalidROMException("PRG ROM memory failed to be " +
                         "read. File might be corrupted");
 
             logger.info("PRG ROM size: {} bytes", prg.length);
@@ -91,15 +94,41 @@ public class Cartridge {
             chr = new byte[8192 * chrBank];
             read = in.read(chr);
             if(read < chr.length)
-                throw new InvalidROMException("CHR ROM data failed to be " +
+                throw new InvalidROMException("CHR ROM memory failed to be " +
                         "read. File might be corrupted");
 
             logger.info("CHR ROM size: {} bytes", chr.length);
 
-            // TODO Implement the rest of INES and NES 2.0 data
+            // TODO Implement the rest of INES and NES 2.0 memory
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        loadToBus();
+    }
+
+    /**
+     * Loads Cartridge ROM memory to bus
+     */
+    public void loadToBus() {
+
+        if(hasTrainer) {
+            for(int i =0 ; i < trainer.length; i++)
+                bus.memory[0x7000 + i] = (int) trainer[i];
+        }
+
+        // Load ROM Data
+        for(int i = 0; i < prg.length; i++)
+            // Read it as unsigned byte
+            bus.memory[0x8000 + i] = prg[i] & 0xFF;
+
+        // If prg blocks are only 1, copy memory as well to 0xC000
+        // This will cover all memory space from (0x8000 to 0xFFFF)
+        if(prgBank == 1)
+            for(int i = 0; i < prg.length; i++)
+                bus.memory[0xC000 + i] = prg[i] & 0xFF;
+
+        // TODO a better implementation would be to mirror values instead
     }
 
     public boolean hasTrainer() {

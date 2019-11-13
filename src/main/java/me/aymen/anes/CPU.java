@@ -1,9 +1,11 @@
 package me.aymen.anes;
 
+import me.aymen.anes.memory.Bus;
+
 public class CPU {
 
     // CPU Components
-    private Memory memory;
+    private Bus bus;
     private int cycles;
 
     // Registers
@@ -14,8 +16,16 @@ public class CPU {
     private int SP;         // Stack Pointer
     private Flags P;        // Process Status
 
-    public CPU(Memory memory) {
-        this.memory = memory;
+    // Used by executing opcode if needed
+    // populated by appropriate addressing mode
+    private int address;
+
+    // All 6502 OPCodes. Unsupported unofficial instructions are
+    // set to null, which will lead to crashing
+
+
+    public CPU(Bus bus) {
+        this.bus = bus;
     }
 
     /**
@@ -23,7 +33,7 @@ public class CPU {
      */
     public void execute() {
         int address;
-        int instruction = memory.read(PC++);
+        int instruction = bus.read(PC++);
 
         switch (instruction) {
 
@@ -99,7 +109,7 @@ public class CPU {
             case Inst.ASL_ZPG:
                 cycles+=5;
                 address = zpg();
-                memory.write(asl(memory.read(address)), address);
+                bus.write(asl(bus.read(address)), address);
                 break;
             case Inst.ASL_ACC:
                 cycles+=2;
@@ -108,17 +118,17 @@ public class CPU {
             case Inst.ASL_ABS:
                 cycles+=6;
                 address = abs();
-                memory.write(asl(memory.read(address)), address);
+                bus.write(asl(bus.read(address)), address);
                 break;
             case Inst.ASL_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                memory.write(asl(memory.read(address)), address);
+                bus.write(asl(bus.read(address)), address);
                 break;
             case Inst.ASL_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                memory.write(asl(memory.read(address)), address);
+                bus.write(asl(bus.read(address)), address);
                 break;
 
             case Inst.BCC:
@@ -428,7 +438,7 @@ public class CPU {
             case Inst.LSR_ZPG:
                 cycles+=5;
                 address = zpg();
-                memory.write(lsr(memory.read(address)), address);
+                bus.write(lsr(bus.read(address)), address);
                 break;
             case Inst.LSR_ACC:
                 cycles+=2;
@@ -437,17 +447,17 @@ public class CPU {
             case Inst.LSR_ABS:
                 cycles+=6;
                 address = abs();
-                memory.write(lsr(memory.read(address)), address);
+                bus.write(lsr(bus.read(address)), address);
                 break;
             case Inst.LSR_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                memory.write(lsr(memory.read(address)), address);
+                bus.write(lsr(bus.read(address)), address);
                 break;
             case Inst.LSR_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                memory.write(lsr(memory.read(address)), address);
+                bus.write(lsr(bus.read(address)), address);
                 break;
 
             case Inst.NOP:
@@ -510,7 +520,7 @@ public class CPU {
             case Inst.ROL_ZPG:
                 cycles+=5;
                 address = zpg();
-                memory.write(rol(memory.read(address)), address);
+                bus.write(rol(bus.read(address)), address);
                 break;
             case Inst.ROL_ACC:
                 cycles+=2;
@@ -519,24 +529,24 @@ public class CPU {
             case Inst.ROL_ABS:
                 cycles+=6;
                 address = abs();
-                memory.write(rol(memory.read(address)), address);
+                bus.write(rol(bus.read(address)), address);
                 break;
             case Inst.ROL_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                memory.write(rol(memory.read(address)), address);
+                bus.write(rol(bus.read(address)), address);
                 break;
             case Inst.ROL_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                memory.write(rol(memory.read(address)), address);
+                bus.write(rol(bus.read(address)), address);
                 break;
 
             // ROR
             case Inst.ROR_ZPG:
                 cycles+=5;
                 address = zpg();
-                memory.write(ror(memory.read(address)), address);
+                bus.write(ror(bus.read(address)), address);
                 break;
             case Inst.ROR_ACC:
                 cycles+=2;
@@ -545,17 +555,17 @@ public class CPU {
             case Inst.ROR_ABS:
                 cycles+=6;
                 address = abs();
-                memory.write(ror(memory.read(address)), address);
+                bus.write(ror(bus.read(address)), address);
                 break;
             case Inst.ROR_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
-                memory.write(ror(memory.read(address)), address);
+                bus.write(ror(bus.read(address)), address);
                 break;
             case Inst.ROR_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
-                memory.write(ror(memory.read(address)), address);
+                bus.write(ror(bus.read(address)), address);
                 break;
 
             case Inst.RTI:
@@ -689,7 +699,7 @@ public class CPU {
                 break;
             case Inst.TSX:
                 cycles+=2;
-                X = memory.read(SP);
+                X = bus.read(SP);
                 P.setZSFlags(X);
                 break;
             case Inst.TXA:
@@ -699,7 +709,7 @@ public class CPU {
                 break;
             case Inst.TXS:
                 cycles+=2;
-                memory.write(X, SP);
+                bus.write(X, SP);
                 break;
             case Inst.TYA:
                 cycles+=2;
@@ -738,7 +748,7 @@ public class CPU {
 
         // Must point to reset vector which is at index
         // 0xFFFD (High) and 0xFFFC (low)
-        PC = memory.read(0xFFFC) | (memory.read(0xFFFD) << 8);
+        PC = bus.read(0xFFFC) | (bus.read(0xFFFD) << 8);
     }
 
     public int getA() {
@@ -778,18 +788,18 @@ public class CPU {
         SP &= 0x100;
     }
 
-    public void setMemory(Memory memory) {
-        this.memory = memory;
+    public void setBus(Bus bus) {
+        this.bus = bus;
     }
 
     public Flags getFlags() {
         return P;
     }
 
-    //region op code related methods
-    // Add data to accumulator with carry
+    //region opcode methods
+    // Add memory to accumulator with carry
     public void adc(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         int result = A + value + (P.C ? 1 : 0);
 
         result = P.setCFlag(result);
@@ -798,14 +808,14 @@ public class CPU {
         P.setZSFlags(A);
     }
 
-    // And data with accumulator
+    // And memory with accumulator
     public void and(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         A = A & value;
         P.setZSFlags(A);
     }
 
-    // Shift accumulator or data byte left
+    // Shift accumulator or memory byte left
     public int asl(int value) {
         value = value << 1;
 
@@ -815,34 +825,34 @@ public class CPU {
         return value;
     }
 
-    // And accumulator with data
+    // And accumulator with memory
     public void bit(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         int result = A & value;
 
         P.setZFlag(result);
         P.setSFlag(value);
-        // Set overflow depending on the 6th bit of the data content
+        // Set overflow depending on the 6th bit of the memory content
         P.V = (value & 0x40) == 0x40 ? true : false;
     }
 
     // Force Break (Software Interrupt)
     public void brk() {
         PC+=2;
-        memory.write(PC >> 8, getSP());
+        bus.write(PC >> 8, getSP());
         decSP();
-        memory.write(PC & 0xFF, getSP());
+        bus.write(PC & 0xFF, getSP());
         decSP();
-        memory.write(P.getStatus(), getSP());
+        bus.write(P.getStatus(), getSP());
         decSP();
-        PC = memory.read(0xFFFE) | (memory.read(0xFFFF) << 8);
+        PC = bus.read(0xFFFE) | (bus.read(0xFFFF) << 8);
         P.I = true;
     }
 
-    // increment data (by value)
+    // increment memory (by value)
     public void inc(int value, int address) {
-        int result = (memory.read(address) + value) & 0xFF;
-        memory.write(result, address);
+        int result = (bus.read(address) + value) & 0xFF;
+        bus.write(result, address);
         P.setZSFlags(result);
     }
 
@@ -858,9 +868,9 @@ public class CPU {
         P.setZSFlags(Y);
     }
 
-    // Xor accumulator with data
+    // Xor accumulator with memory
     public void eor(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         A = (A ^ value) & 0xFF;
         P.setZSFlags(A);
     }
@@ -874,35 +884,35 @@ public class CPU {
     public void jsr(int address) {
         // It is expected that the jsr will store the address of the third byte
         PC--;
-        memory.write(PC >> 8, getSP());
+        bus.write(PC >> 8, getSP());
         decSP();
-        memory.write(PC & 0xFF, getSP());
+        bus.write(PC & 0xFF, getSP());
         decSP();
         PC = address;
     }
 
-    // Load Accumulator from Memory
+    // Load Accumulator from Bus
     public void lda(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         A = value;
         P.setZSFlags(A);
     }
 
-    // Load Index Register X from Memory
+    // Load Index Register X from Bus
     public void ldx(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         X = value;
         P.setZSFlags(X);
     }
 
-    // Load Index Register Y from Memory
+    // Load Index Register Y from Bus
     public void ldy(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         Y = value;
         P.setZSFlags(Y);
     }
 
-    // Logical Shift Right of Accumulator or Memory
+    // Logical Shift Right of Accumulator or Bus
     public int lsr(int value) {
         int lowBit = value & 0x1;
         value = value >> 1;
@@ -913,26 +923,26 @@ public class CPU {
         return value;
     }
 
-    // Logically OR Memory with Accumulator
+    // Logically OR Bus with Accumulator
     public void ora(int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
         A = A | value;
         P.setZSFlags(A);
     }
 
     // Push value into Stack
     public void ph(int value) {
-        memory.write(value, getSP());
+        bus.write(value, getSP());
         decSP();
     }
 
     // Pull content from Stack
     public int pl() {
         incSP();
-        return memory.read(getSP());
+        return bus.read(getSP());
     }
 
-    // Rotate Accumulator or Memory Left through Carry
+    // Rotate Accumulator or Bus Left through Carry
     public int rol(int value) {
         value = (value << 1) | (P.C ? 1 : 0);
         P.C = (value & 0x100) == 0x100;
@@ -942,7 +952,7 @@ public class CPU {
         return value;
     }
 
-    // Rotate Accumulator or Memory Right through Carry
+    // Rotate Accumulator or Bus Right through Carry
     public int ror(int value) {
         int lowBit = value & 0x01;
         value = (P.C ? 0x80 : 0) | (value >> 1);
@@ -955,30 +965,30 @@ public class CPU {
     // Return from Interrupt
     public void rti() {
         incSP();
-        P.setStatus(memory.read(getSP()));
+        P.setStatus(bus.read(getSP()));
         incSP();
-        PC = memory.read(getSP());
+        PC = bus.read(getSP());
         incSP();
-        PC += (memory.read(getSP()) << 8);
+        PC += (bus.read(getSP()) << 8);
     }
 
     // Return from Subroutine
     public void rts() {
         incSP();
-        PC = memory.read(getSP());
+        PC = bus.read(getSP());
         incSP();
-        PC += (memory.read(getSP()) << 8);
+        PC += (bus.read(getSP()) << 8);
 
         // The jsr stored the third byte as an address, so pc is
         // incremented to point to next next instruction after return
         PC++;
     }
 
-    // Subtract Memory from Accumulator with Borrow
+    // Subtract Bus from Accumulator with Borrow
     public void sbc(int address) {
         // Same as ADC. The only difference is value is treated as
         // complement value. Code repeated to avoid stack call
-        int value = 255 -  memory.read(address);
+        int value = 255 -  bus.read(address);
         int result = A + value + (P.C ? 1 : 0);
 
         result = P.setCFlag(result);
@@ -987,19 +997,19 @@ public class CPU {
         P.setZSFlags(A);
     }
 
-    // Store value in Memory
+    // Store value in Bus
     public void st(int address, int value) {
-        memory.write(value, address);
+        bus.write(value, address);
     }
 
     /**
-     * Subtract data content from given compare value and set C, F and S
+     * Subtract memory content from given compare value and set C, F and S
      * flags accordingly
      * @param cmp Value to compare
-     * @param address data address of content to compare with
+     * @param address memory address of content to compare with
      */
     public void compare(int cmp, int address) {
-        int value = memory.read(address);
+        int value = bus.read(address);
 
         // Get 2's complements of value
         int result = cmp + ((value * -1) & 0xFF);
@@ -1017,7 +1027,7 @@ public class CPU {
         if (!cond)
             return;
 
-        byte value = (byte) memory.read(PC);
+        byte value = (byte) bus.read(PC);
 
         int oldPC = PC;
         PC += value;
@@ -1028,7 +1038,9 @@ public class CPU {
             cycles+=1;
     }
 
-    // Address Modes
+    //endregion
+
+    //region  Address Modes
 
     /**
      * Immediate address
@@ -1043,8 +1055,8 @@ public class CPU {
      * @return
      */
     private int abs() {
-        // Read the first and second byte after instruction for data address
-        return memory.read(PC++) | (memory.read(PC++) << 8);
+        // Read the first and second byte after instruction for memory address
+        return bus.read(PC++) | (bus.read(PC++) << 8);
     }
 
     /**
@@ -1052,13 +1064,13 @@ public class CPU {
      * @return
      */
     private int ind() {
-        int low = memory.read(PC++);
-        int high = memory.read(PC++);
+        int low = bus.read(PC++);
+        int high = bus.read(PC++);
         int address = low | (high << 8);
-        int value = memory.read(address);
+        int value = bus.read(address);
         // Fixes first operand (low byte) cross page boundary
         address = ( (low + 1) & 0xFF) | (high << 8);
-        value+= memory.read(address) << 8;
+        value+= bus.read(address) << 8;
 
         return value;
     }
@@ -1068,8 +1080,8 @@ public class CPU {
      * @return
      */
     private int zpg() {
-        // Read first byte only after instruction for data address
-        return memory.read(PC++);
+        // Read first byte only after instruction for memory address
+        return bus.read(PC++);
     }
 
     /**
@@ -1077,10 +1089,10 @@ public class CPU {
      * @return
      */
     private int pre() {
-        // X + first byte after instruction as data address to access first 256 bytes of data, which
+        // X + first byte after instruction as memory address to access first 256 bytes of memory, which
         // wraparound when addition is overflowed. The Index and next byte (within zero page) is considered
         // the 16 bit address
-        int index = (X + memory.read(PC++)) & 0xFF;
+        int index = (X + bus.read(PC++)) & 0xFF;
 
         return index | ( ( (index + 1) & 0xFF) << 8) ;
     }
@@ -1094,7 +1106,7 @@ public class CPU {
     private int pos(boolean extra) {
         // First byte after instruction the 16 bit address.
         // Index + Y is returned
-        int address = memory.read(PC++) | (memory.read(PC++) << 8);
+        int address = bus.read(PC++) | (bus.read(PC++) << 8);
 
         if( extra &&
                 ((address & 0xFF00) != ((address + Y) & 0xFF00)))
@@ -1112,7 +1124,7 @@ public class CPU {
      */
     private int indx(int register, boolean extra) {
         // First and second byte + register as a 16 bit address
-        int address = memory.read(PC++) | (memory.read(PC++) << 8);
+        int address = bus.read(PC++) | (bus.read(PC++) << 8);
 
         if ( extra && (address & 0xFF00) != ((address + Y) & 0xFF00) )
             cycles++;
@@ -1127,7 +1139,7 @@ public class CPU {
      */
     private int zpgIndx(int register) {
         // Crossing page boundary is not to be handled
-        return (register + memory.read(PC++)) & 0xFF;
+        return (register + bus.read(PC++)) & 0xFF;
     }
 
     //endregion
