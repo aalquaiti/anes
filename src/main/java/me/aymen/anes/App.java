@@ -13,13 +13,18 @@ public class App
     {
         // TODO Create an NES Board that do this functinalities
         Bus bus = new Bus();
-        Cartridge c = new Cartridge(bus);
-        c.load("test roms/cpu_dummy_reads.nes");
+        //Cartridge c = new Cartridge(bus);
+        //c.load("test roms/cpu_dummy_reads.nes");
+
 
         CPU cpu = new CPU(bus);
-//        cpu.reset();
+        bus.memory[0] = 6;
+        bus.memory[1] = 45;
+        bus.memory[2] = 56;
+        cpu.setPC(0);
+        //cpu.reset();
 //        cpu.execute();
-        cpu.start();
+        System.out.println(cpu.tick());
 
         System.out.println(cpu.getCycles());
     }

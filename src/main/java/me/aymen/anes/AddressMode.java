@@ -1,0 +1,81 @@
+package me.aymen.anes;
+
+/**
+ * Reference to difference address mode methods used.
+ * It does refer directly to address modes related to 6502. Although they are
+ * related, this file is mostly to refer to variations in how to execute
+ * these address modes inside code. E.g: 'pos' mode exist in reality, but no
+ * mode is called 'posExtra'. The second is just 'pos' mode with extra clock
+ * added.
+ */
+public interface AddressMode {
+    /**
+     * Indexed at one
+     */
+    int SIZE = 14;
+
+    /**
+     * Implied
+     */
+    int IMPL = 1;
+
+    /**
+     * Accumulator
+     */
+    int ACC = 2;
+
+    /**
+     * Immediate
+     */
+    int IMM = 3;
+
+    /**
+     * Zero Page
+     */
+    int ZPG = 4;
+
+    /**
+     * Zero page indexed with X
+     */
+    int ZPGX = 5;
+
+    /**
+     * Zero page indexed with Y
+     */
+    int ZPGY = 6;
+
+    /**
+     * Relative
+     */
+    int REL = 7;
+
+    /**
+     * Absolute
+     */
+    int ABS = 8;
+
+    /**
+     * Absolute indexed with X
+     */
+    int ABSX = 9;
+
+    /**
+     * Absolute indexed with Y
+     */
+    int ABSY = 10;
+
+    /**
+     * Indirect
+     */
+    int IND = 11;
+
+    /**
+     * Indirect Y. Also known as  Indexed Indirect
+     */
+    int INDX = 12;
+
+    /**
+     * Indirect Y. Also known as  Indirect Indexed
+     */
+    int INDY = 13;
+}
