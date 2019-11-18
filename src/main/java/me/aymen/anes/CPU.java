@@ -54,11 +54,10 @@ public class CPU {
         addressMode[ABSX_PLUS] = this::absxPlus;
         addressMode[ABSY] = this::absy;
         addressMode[ABSY_PLUS] = this::absyPlus;
-//        addressMode[IND] = this::ind;
+        addressMode[IND] = this::ind;
         addressMode[INDX] = this::indx;
         addressMode[INDY] = this::indy;
         addressMode[INDY_PLUS ] = this::indyPlus;
-
 
         // 0x0#
         opcodes[0x00] = new Inst("BRK", 7, IMPL, this::brk);
@@ -169,6 +168,24 @@ public class CPU {
         opcodes[0x5F] = null;
 
         // 0x6#
+        opcodes[0x60] = new Inst("RTS", 6, IMPL, this::rts);
+        opcodes[0x61] = new Inst("ADC", 6, INDX, this::adc);
+        opcodes[0x62] = null;
+        opcodes[0x63] = null;
+        opcodes[0x64] = null;
+        opcodes[0x65] = new Inst("ADC", 3, ZPG, this::adc);
+        opcodes[0x66] = new Inst("ROR", 5, ZPG, this::rorM);
+        opcodes[0x67] = null;
+        opcodes[0x68] = new Inst("PLA", 4, IMPL, this::pla);
+        opcodes[0x69] = new Inst("ADC", 2, IMM, this::adc);
+        opcodes[0x6A] = new Inst("ROR", 2, ACC, this::rorA);
+        opcodes[0x6B] = null;
+        opcodes[0x6C] = new Inst("JMP", 5, IND, this::jmp);
+        opcodes[0x6D] = new Inst("ADC", 4, ABS, this::adc);
+        opcodes[0x6E] = new Inst("ROR", 6, ABS, this::rorM);
+        opcodes[0x6F] = null;
+
+        // 0x7#
         
     }
 
@@ -182,10 +199,6 @@ public class CPU {
         switch (instruction) {
 
             // ADC
-            case Inst4.ADC_PRE:
-                cycles+=6;
-                adc(indx());
-                break;
             case Inst4.ADC_ZPG:
                 cycles+=3;
                 adc(zpg());
@@ -346,23 +359,6 @@ public class CPU {
                 iny(0xFF);
                 break;
 
-            // EOR
-            case Inst4.EOR_POS:
-                cycles+=5;
-                eor(pos(true));
-            case Inst4.EOR_ZPGX:
-                cycles+=4;
-                eor(zpgIndx(X));
-                break;
-            case Inst4.EOR_ABSY:
-                cycles+=4;
-                eor(indx(Y, true));
-                break;
-            case Inst4.EOR_ABSX:
-                cycles+=4;
-                adc(indx(X, true));
-                break;
-
             // INC
             case Inst4.INC_ZPG:
                 cycles+=5;
@@ -474,18 +470,6 @@ public class CPU {
                 ldy(indx(X, false));
                 break;
 
-            // LSR
-            case Inst4.LSR_ZPGX:
-                cycles+=6;
-                address = zpgIndx(X);
-                bus.write(lsr(bus.read(address)), address);
-                break;
-            case Inst4.LSR_ABSX:
-                cycles+=7;
-                address = zpgIndx(X);
-                bus.write(lsr(bus.read(address)), address);
-                break;
-
             case Inst4.NOP:
                 cycles+=2;
                 break;
@@ -532,10 +516,6 @@ public class CPU {
             case Inst4.RTI:
                 cycles+=6;
                 rti();
-                break;
-            case Inst4.RTS:
-                cycles+=6;
-                rts();
                 break;
 
             // SBC
@@ -828,17 +808,17 @@ public class CPU {
 
     //region opcodes methods
 
-//    // Add memory to accumulator with carry
-//    public void adc(int address) {
-//        int value = bus.read(address);
-//        int result = A + value + (P.C ? 1 : 0);
-//
-//        result = P.setCFlag(result);
-//        P.setVFlag(A, value, result);
-//        A = result;
-//        P.setZSFlags(A);
-//    }
-//
+    /**
+     * Add memory to accumulator with carry
+     */
+    public void adc() {
+        int result = A + value + (P.C ? 1 : 0);
+        result = P.setCFlag(result);
+        P.setVFlag(A, value, result);
+        A = result;
+        P.setZSFlags(A);
+    }
+
 
     /**
      * Logical And memory with accumulator
@@ -1036,6 +1016,14 @@ public class CPU {
     }
 
     /**
+     * Pull Accumulator from stack
+     */
+    public void pla() {
+        A = pl();
+        P.setZSFlags(A);
+    }
+
+    /**
      * Pull Processor Status
      */
     public void plp() {
@@ -1056,16 +1044,19 @@ public class CPU {
         bus.write(rol(), address);
     }
 
-//    // Rotate Accumulator or Bus Right through Carry
-//    public int ror(int value) {
-//        int lowBit = value & 0x01;
-//        value = (P.C ? 0x80 : 0) | (value >> 1);
-//        P.C = (lowBit & 0x01) == 0x01;
-//        P.setZSFlags(value);
-//
-//        return value;
-//    }
-//
+    /**
+     * Rotate Accumulator Right through Carry
+     */
+    public void rorA() {
+        A = ror();
+    }
+
+    /**
+     * Rotate Memory Content Right through Carry
+     */
+    public void rorM() {
+        bus.write(ror(), address);
+    }
 
     /**
      * Return from Interrupt
@@ -1076,18 +1067,15 @@ public class CPU {
         PC += (bus.read(incSP()) << 8);
     }
 //
-//    // Return from Subroutine
-//    public void rts() {
-//        incSP();
-//        PC = bus.read(getSP());
-//        incSP();
-//        PC += (bus.read(getSP()) << 8);
-//
-//        // The jsr stored the third byte as an address, so pc is
-//        // incremented to point to next next instruction after return
-//        PC++;
-//    }
-//
+
+    /**
+     * Return from Subroutine
+     */
+    public void rts() {
+        PC = bus.read(incSP());
+        PC += (bus.read(incSP()) << 8);
+    }
+
 //    // Subtract Bus from Accumulator with Borrow
 //    public void sbc(int address) {
 //        // Same as ADC. The only difference is value is treated as
@@ -1377,6 +1365,19 @@ public class CPU {
         value = (value << 1) | (P.C ? 1 : 0);
         P.C = (value & 0x100) == 0x100;
         value = value & 0xFF;
+        P.setZSFlags(value);
+
+        return value;
+    }
+
+    /**
+     * Rotate Accumulator or Memory content Right through Carry
+     * @return
+     */
+    public int ror() {
+        int lowBit = value & 0x01;
+        value = (P.C ? 0x80 : 0) | (value >> 1);
+        P.C = (lowBit & 0x01) == 0x01;
         P.setZSFlags(value);
 
         return value;

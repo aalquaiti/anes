@@ -37,7 +37,7 @@ public class Deassembler {
         modes[ABSX_PLUS] = modes[ABSX];
         modes[ABSY] = v -> String.format("$%02X%02X,Y", v.op2, v.op1);
         modes[ABSY_PLUS] = modes[ABSY];
-//        modes[IND] = this::ind;
+        modes[IND] = v -> String.format("($%02X%02X)", v.op2, v.op1);
         modes[INDX] = v -> String.format("($%02X,X)", v.op1);
         modes[INDY] = v -> String.format("($%02X),Y", v.op1);
         modes[INDY_PLUS] = modes[INDY];
