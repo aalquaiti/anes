@@ -18,10 +18,11 @@ public class App
 
 
         CPU cpu = new CPU(bus);
-        bus.memory[0] = 6;
-        bus.memory[1] = 45;
-        bus.memory[2] = 56;
+        bus.memory[0] = 0x31;
+        bus.memory[1] = 0xFF;
+        bus.memory[2] = 0x40;
         cpu.setPC(0);
+        cpu.setX(1);
         //cpu.reset();
 //        cpu.execute();
         System.out.println(cpu.tick());

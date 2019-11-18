@@ -43,28 +43,96 @@ public class CPU {
 
         // populates addressModes
         addressMode[IMPL] =  () -> {};
-//        addressMode[ACC] = ::acc;
-//        addressMode[IMM] = this::imm;
+        addressMode[ACC] = this::acc;
+        addressMode[IMM] = this::imm;
         addressMode[ZPG] = this::zpg;
-//        addressMode[ZPGX] = this::zpgx;
+        addressMode[ZPGX] = this::zpgx;
 //        addressMode[ZPGY] = this::zpgy;
-//        addressMode[REL] = () -> {};
-//        addressMode[ABS] = this::abs;
-//        addressMode[ABSX] = this::absx;
-//        addressMode[ABSY] = this::absy;
+        addressMode[REL] = this::rel;
+        addressMode[ABS] = this::abs;
+        addressMode[ABSX] = this::absx;
+        addressMode[ABSX_PLUS] = this::absxPlus;
+        addressMode[ABSY] = this::absy;
+        addressMode[ABSY_PLUS] = this::absyPlus;
 //        addressMode[IND] = this::ind;
         addressMode[INDX] = this::indx;
-//        addressMode[INDY] = this::indy;
+        addressMode[INDY] = this::indy;
+        addressMode[INDY_PLUS ] = this::indyPlus;
 
 
         // 0x0#
-        opcodes[0x00] = new Inst("BRK", 7, IMPL , this::brk);
+        opcodes[0x00] = new Inst("BRK", 7, IMPL, this::brk);
         opcodes[0x01] = new Inst("ORA", 6, INDX, this::ora);
         opcodes[0x02] = null;
         opcodes[0x03] = null;
         opcodes[0x04] = null;
         opcodes[0x05] = new Inst("ORA", 3, ZPG, this::ora);
-        opcodes[0x06] = new Inst("ASL", 5, ZPG, this::aslA);
+        opcodes[0x06] = new Inst("ASL", 5, ZPG, this::aslM);
+        opcodes[0x07] = null;
+        opcodes[0x08] = new Inst("PHP", 3, IMPL, this::php);
+        opcodes[0x09] = new Inst("ORA", 2, IMM, this::ora);
+        opcodes[0x0A] = new Inst("ASL", 2, ACC, this::aslA);
+        opcodes[0x0B] = null;
+        opcodes[0x0C] = null;
+        opcodes[0x0D] = new Inst("ORA", 4, ABS, this::ora);
+        opcodes[0x0E] = new Inst("ASL", 6, ABS, this::aslM);
+        opcodes[0x0F] = null;
+
+        // 0x1#
+        opcodes[0x10] = new Inst("BPL", 2, REL, this::bpl);
+        opcodes[0x11] = new Inst("ORA", 5, INDY, this::ora);
+        opcodes[0x12] = null;
+        opcodes[0x13] = null;
+        opcodes[0x14] = null;
+        opcodes[0x15] = new Inst("ORA", 5, ZPGX, this::ora);
+        opcodes[0x16] = new Inst("ASL", 6, ZPGX, this::aslM);
+        opcodes[0x17] = null;
+        opcodes[0x18] = new Inst("CLC", 2, IMPL, this::clc);
+        opcodes[0x19] = new Inst("ORA", 4, ABSY, this::ora);
+        opcodes[0x1A] = null;
+        opcodes[0x1B] = null;
+        opcodes[0x1C] = null;
+        opcodes[0x1D] = new Inst("ORA", 4, ABSX, this::ora);
+        opcodes[0x1E] = new Inst("ASL", 7, ABSX_PLUS, this::aslM);
+        opcodes[0x1F] = null;
+
+        // 0x2#
+        opcodes[0x20] = new Inst("JSR", 6, ABS, this::jsr);
+        opcodes[0x21] = new Inst("AND", 6, INDX, this::and);
+        opcodes[0x22] = null;
+        opcodes[0x23] = null;
+        opcodes[0x24] = new Inst("BIT", 3, ZPG, this::bit);
+        opcodes[0x25] = new Inst("AND", 3, ZPG, this::and);
+        opcodes[0x26] = new Inst("ROL", 5, ZPG, this::rolM);
+        opcodes[0x27] = null;
+        opcodes[0x28] = new Inst("PLP", 4, IMPL, this::plp);
+        opcodes[0x29] = new Inst("AND", 2, IMM, this::and);
+        opcodes[0x2A] = new Inst("ROL", 2, ACC, this::rolA);
+        opcodes[0x2B] = null;
+        opcodes[0x2C] = new Inst("BIT", 4, ABS, this::bit);
+        opcodes[0x2D] = new Inst("AND", 4, ABS, this::and);
+        opcodes[0x2E] = new Inst("ROL", 6, ABS, this::rolM);
+        opcodes[0x2F] = null;
+
+        // 0x3#
+        opcodes[0x30] = new Inst("BMI", 2, REL, this::bmi);
+        opcodes[0x31] = new Inst("AND", 5, INDY, this::and);
+        opcodes[0x32] = null;
+        opcodes[0x33] = null;
+        opcodes[0x34] = null;
+        opcodes[0x35] = new Inst("AND", 4, ZPGX, this::and);
+        opcodes[0x36] = new Inst("ROL", 6, ZPGX, this::rolM);
+        opcodes[0x37] = null;
+        opcodes[0x38] = new Inst("SEC", 2, IMPL, this::sec);
+        opcodes[0x39] = new Inst("AND", 4, ABSY, this::and);
+        opcodes[0x3A] = null;
+        opcodes[0x3B] = null;
+        opcodes[0x3C] = null;
+        opcodes[0x3D] = new Inst("AND", 4, ABSX, this::and);
+        opcodes[0x3E] = new Inst("ROL", 7, ABSX_PLUS, this::rolM);
+        opcodes[0x3F] = null;
+
+        // 0x3#
     }
 
     /**
@@ -111,30 +179,6 @@ public class CPU {
                 break;
 
             // AND
-            case Inst4.AND_PRE:
-                cycles+=6;
-                and(indx());
-                break;
-            case Inst4.AND_ZPG:
-                cycles+=3;
-                and(zpg());
-                break;
-            case Inst4.AND_IMM:
-                cycles+=2;
-                and(imm());
-                break;
-            case Inst4.AND_ABS:
-                cycles+=4;
-                and(abs());
-                break;
-            case Inst4.AND_POS:
-                cycles+=5;
-                and(pos(true));
-                break;
-            case Inst4.AND_ZPGX:
-                cycles+=4;
-                and(zpgIndx(X));
-                break;
             case Inst4.AND_ABSY:
                 cycles+=4;
                 and(zpgIndx(Y));
@@ -142,27 +186,6 @@ public class CPU {
             case Inst4.AND_ABSX:
                 cycles+=4;
                 and(zpgIndx(X));
-                break;
-
-            // ASL
-            case Inst4.ASL_ACC:
-                cycles+=2;
-                A = asl(A);
-                break;
-            case Inst4.ASL_ABS:
-                cycles+=6;
-                address = abs();
-                bus.write(asl(bus.read(address)), address);
-                break;
-            case Inst4.ASL_ZPGX:
-                cycles+=6;
-                address = zpgIndx(X);
-                bus.write(asl(bus.read(address)), address);
-                break;
-            case Inst4.ASL_ABSX:
-                cycles+=7;
-                address = zpgIndx(X);
-                bus.write(asl(bus.read(address)), address);
                 break;
 
             case Inst4.BCC:
@@ -177,25 +200,14 @@ public class CPU {
                 cycles+=2;
                 branch(P.Z);
                 break;
-            case Inst4.BIT_ZPG:
-                cycles+=3;
-                bit(zpg());
-                break;
+
             case Inst4.BIT_ABS:
                 cycles+=3;
                 bit(abs());
                 break;
-            case Inst4.BMI:
-                cycles+=2;
-                branch(P.S);
-                break;
             case Inst4.BNE:
                 cycles+=2;
                 branch(!P.Z);
-                break;
-            case Inst4.BPL:
-                cycles+=2;
-                branch(!P.S);
                 break;
             case Inst4.BVC:
                 cycles+=2;
@@ -204,10 +216,6 @@ public class CPU {
             case Inst4.BVS:
                 cycles+=2;
                 branch(P.V);
-                break;
-            case Inst4.CLC:
-                cycles+=2;
-                P.C = false;
                 break;
             case Inst4.CLD:
                 cycles+=2;
@@ -381,11 +389,6 @@ public class CPU {
                 jmp(ind());
                 break;
 
-            case Inst4.JSR:
-                cycles+=6;
-                jsr(abs());
-                break;
-
             // LDA
             case Inst4.LDA_PRE:
                 cycles+=6;
@@ -494,39 +497,11 @@ public class CPU {
                 cycles+=2;
                 break;
 
-            // ORA
-            case Inst4.ORA_IMM:
-                cycles+=2;
-                ora(imm());
-                break;
-            case Inst4.ORA_ABS:
-                cycles+=4;
-                ora(abs());
-                break;
-            case Inst4.ORA_POS:
-                cycles+=5;
-                ora(pos(true));
-                break;
-            case Inst4.ORA_ZPGX:
-                cycles+=4;
-                ora(zpgIndx(X));
-                break;
-            case Inst4.ORA_ABSY:
-                cycles+=4;
-                ora(indx(Y, true));
-                break;
-            case Inst4.ORA_ABSX:
-                cycles+=4;
-                ora(indx(X, true));
-                break;
+
 
             case Inst4.PHA:
                 cycles+=3;
                 ph(A);
-                break;
-            case Inst4.PHP:
-                cycles+=3;
-                ph(P.getStatus());
                 break;
             case Inst4.PLA:
                 cycles+=4;
@@ -539,25 +514,6 @@ public class CPU {
                 break;
 
             // ROL
-            case Inst4.ROL_ZPG:
-                cycles+=5;
-                address = zpg();
-                bus.write(rol(bus.read(address)), address);
-                break;
-            case Inst4.ROL_ACC:
-                cycles+=2;
-                A = rol(A);
-                break;
-            case Inst4.ROL_ABS:
-                cycles+=6;
-                address = abs();
-                bus.write(rol(bus.read(address)), address);
-                break;
-            case Inst4.ROL_ZPGX:
-                cycles+=6;
-                address = zpgIndx(X);
-                bus.write(rol(bus.read(address)), address);
-                break;
             case Inst4.ROL_ABSX:
                 cycles+=7;
                 address = zpgIndx(X);
@@ -633,10 +589,6 @@ public class CPU {
                 sbc(indx(X, true));
                 break;
 
-            case Inst4.SEC:
-                cycles+=2;
-                P.C = true;
-                break;
             case Inst4.SED:
                 // Decimal mode is disabled in NES
                 // ADC and SBC instructions will not be affected as
@@ -747,7 +699,7 @@ public class CPU {
     public String tick() {
 
         // Read the current PC then increment it
-        int currentPC = PC++;
+        int currentPC = incPC();
 
         // Retrieve the operation mnemonic
         int op = bus.read(currentPC);
@@ -760,14 +712,15 @@ public class CPU {
          *      b. op2
          *      c. address
          *      d. value
-         *  2. Invoke
+         *  2. Invoke opcode
+         *  3. Update cycles count
          */
         Inst opcode = opcodes[op];
         addressMode[opcode.mode].process();
         opcode.operation.process();
+        cycles += opcode.cycles;
 
-        return String.format("%04X    %s", currentPC,
-                Deassembler.analyse(opcode, op1, op2));
+        return Deassembler.analyse(currentPC, opcode, op1, op2);
     }
 
 //    public void start() {
@@ -807,6 +760,10 @@ public class CPU {
         return A;
     }
 
+    public void setA(int a) {
+        A = a;
+    }
+
     public int getPC() {
         return PC;
     }
@@ -815,33 +772,63 @@ public class CPU {
         this.PC = PC;
     }
 
+    public int getX() {
+        return X;
+    }
 
-    /**
-     * Retrieve SP to be within range 0x100 to 0x1FF
-     * @return
-     */
-    public int getSP() {
-        return SP + 0x100;
+    public void setX(int x) {
+        X = x;
+    }
+
+    public int getY() {
+        return Y;
+    }
+
+    public void setY(int y) {
+        Y = y;
     }
 
     /**
-     * Decrement the stack pointer by one.
-     * The stack will always be in range 0x100 to 0x1FF, so any overflow
-     * will lead to wrapping around the range.
+     * Increment PC by one
+     * @return previous PC value before incremental
      */
-    public void decSP() {
-        SP--;
-        SP &= 0x100;
+    public int incPC() {
+        int previous = PC;
+        PC = (PC + 1) &  0xFFFF;
+        return previous;
+    }
+
+    /**
+     * Decrement PC by one
+     * @return previous PC value before decrement
+     */
+    public int decPC() {
+        int previous = PC;
+        PC = (PC - 1) &  0xFFFF;
+        return previous;
     }
 
     /**
      * Increment the stack pointer by one.
      * The stack will always be in range 0x100 to 0x1FF, so any overflow
      * will lead to wrapping around the range.
+     * @return SP value after increment
      */
-    public void incSP() {
-        SP++;
-        SP &= 0x100;
+    public int incSP() {
+        SP =  (SP + 1) & 0x100;
+        return SP;
+    }
+
+    /**
+     * Decrement the stack pointer by one.
+     * The stack will always be in range 0x100 to 0x1FF, so any overflow
+     * will lead to wrapping around the range.
+     * @return previous SP value before decrement
+     */
+    public int decSP() {
+        int previous = SP;
+        SP =  (SP - 1) & 0x100;
+        return previous;
     }
 
     public void setBus(Bus bus) {
@@ -850,6 +837,10 @@ public class CPU {
 
     public Flags getFlags() {
         return P;
+    }
+
+    public int getCycles() {
+        return cycles;
     }
 
     //region opcodes methods
@@ -865,12 +856,14 @@ public class CPU {
 //        P.setZSFlags(A);
 //    }
 //
-//    // And memory with accumulator
-//    public void and(int address) {
-//        int value = bus.read(address);
-//        A = A & value;
-//        P.setZSFlags(A);
-//    }
+
+    /**
+     * Logical And memory with accumulator
+     */
+    public void and() {
+        A = A & value;
+        P.setZSFlags(A);
+    }
 //
     /**
      * Arithmetic Shift left. Shifts accumulator one bit left
@@ -887,39 +880,54 @@ public class CPU {
     }
 
     /**
-     * Arithmetic Shift left. Shift value one bit left
-     * @return value shifted
+     * Branch on Plus.
+     * Branches if Positive
      */
-    private int asl() {
-        value = value << 1;
-        value =  P.setCFlag(value);
-        P.setZSFlags(value);
-
-        return value;
+    public void bpl() {
+        branch(!P.S);
     }
 //
-//    // And accumulator with memory
-//    public void bit(int address) {
-//        int value = bus.read(address);
-//        int result = A & value;
-//
-//        P.setZFlag(result);
-//        P.setSFlag(value);
-//        // Set overflow depending on the 6th bit of the memory content
-//        P.V = (value & 0x40) == 0x40 ? true : false;
-//    }
 
-    // Force Break (Software Interrupt)
+    /**
+     * And accumulator with memory
+     */
+    public void bit() {
+        int result = A & value;
+        P.setZFlag(result);
+        P.setSFlag(value);
+        // Set overflow depending on the 6th bit of the memory content
+        P.V = (value & 0x40) == 0x40;
+    }
+
+    /**
+     * Branch if Minus
+     */
+    public void bmi() {
+        branch(P.S);
+    }
+
+    /**
+     * Force Break (Software Interrupt)
+      */
     public void brk() {
-        PC+=2;
-        bus.write(PC >> 8, getSP());
-        decSP();
-        bus.write(PC & 0xFF, getSP());
-        decSP();
-        bus.write(P.getStatus(), getSP());
-        decSP();
-        PC = bus.read(0xFFFE) | (bus.read(0xFFFF) << 8);
+        // Increment PC by one, so that when RTI is called, the returned
+        // address will be brk + 2. One already increased when reading the
+        // instruction, and one is done below
+        incPC();
         P.I = true;
+        // Write PC and processor status
+        bus.write(PC >> 8, decSP());
+        bus.write(PC & 0xFF, decSP());
+        bus.write(P.getStatus(), decSP());
+        // Set PC to interrupt vector address
+        PC = bus.read(0xFFFE) | (bus.read(0xFFFF) << 8);
+    }
+
+    /**
+     * Clear Carry Flag
+     */
+    public void clc() {
+        P.C = false;
     }
 
 //    // increment memory (by value)
@@ -953,16 +961,21 @@ public class CPU {
 //        PC = address;
 //    }
 //
-//    // Jump to Subroutine
-//    public void jsr(int address) {
-//        // It is expected that the jsr will store the address of the third byte
-//        PC--;
-//        bus.write(PC >> 8, getSP());
-//        decSP();
-//        bus.write(PC & 0xFF, getSP());
-//        decSP();
-//        PC = address;
-//    }
+
+    /**
+     * Jump to Subroutine
+     */
+    public void jsr() {
+        // TODO check if implementation is correct
+        // It is expected that the jsr will store the address  (minus one)
+        // to the stack then jump to given address
+        decPC();
+        // High byte
+        bus.write(PC >> 8, decSP());
+        // Low byte
+        bus.write(PC & 0xFF, decSP());
+        PC = address;
+    }
 //
 //    // Load Accumulator from Bus
 //    public void lda(int address) {
@@ -996,34 +1009,42 @@ public class CPU {
 //        return value;
 //    }
 //
-    // Logically OR Bus with Accumulator
+    // Logically OR Memory content with Accumulator
     public void ora() {
         A = A | value;
         P.setZSFlags(A);
     }
 //
-//    // Push value into Stack
-//    public void ph(int value) {
-//        bus.write(value, getSP());
-//        decSP();
-//    }
-//
-//    // Pull content from Stack
-//    public int pl() {
-//        incSP();
-//        return bus.read(getSP());
-//    }
-//
-//    // Rotate Accumulator or Bus Left through Carry
-//    public int rol(int value) {
-//        value = (value << 1) | (P.C ? 1 : 0);
-//        P.C = (value & 0x100) == 0x100;
-//        value = value & 0xFF;
-//        P.setZSFlags(value);
-//
-//        return value;
-//    }
-//
+
+    /**
+     * Push Processor Status.
+     * Pushes a copy of status into stack
+     */
+    public void php() {
+        ph(P.getStatus());
+    }
+
+    /**
+     * Pull Processor Status
+     */
+    public void plp() {
+        P.setStatus(pl());
+    }
+
+    /**
+     * Rotate Accumulator Left through Carry
+     */
+    public void rolA() {
+        A = rol();
+    }
+
+    /**
+     * Rotate Memory content Left through Carry
+     */
+    public void rolM() {
+        bus.write(rol(), address);
+    }
+
 //    // Rotate Accumulator or Bus Right through Carry
 //    public int ror(int value) {
 //        int lowBit = value & 0x01;
@@ -1068,6 +1089,13 @@ public class CPU {
 //        A = result;
 //        P.setZSFlags(A);
 //    }
+
+    /**
+     * Set Carry Flag
+     */
+    public void sec() {
+        P.C = true;
+    }
 //
 //    // Store value in Bus
 //    public void st(int address, int value) {
@@ -1090,45 +1118,25 @@ public class CPU {
         P.setSFlag(result);
     }
 
-//    /**
-//     * Whether to branch execution
-//     * @param cond True if branching condition is met
-//     */
-//    public void branch(boolean cond) {
-//        PC++;
-//        if (!cond)
-//            return;
-//
-//        byte value = (byte) bus.read(PC);
-//
-//        int oldPC = PC;
-//        PC += value;
-//        cycles++;
-//
-//        // When cross page occurs
-//        if( (oldPC & 0xFF00) != (PC & 0xFF00))
-//            cycles+=1;
-//    }
+
 
     //endregion
 
     //region  Address Modes
 
     /**
-     * Immediate address
-     * @return
+     * Accumulator
      */
-    private int imm() {
-        return PC++;
+    private void acc() {
+        value = A;
     }
 
     /**
-     * Absolute (direct) address
-     * @return
+     * Immediate
      */
-    private int abs() {
-        // Read the first and second byte after instruction for memory address
-        return bus.read(PC++) | (bus.read(PC++) << 8);
+    private void imm() {
+        op1 = incPC();
+        value = op1;
     }
 
     /**
@@ -1137,14 +1145,116 @@ public class CPU {
      */
     private void zpg() {
         // Read first byte only after instruction for memory address
-        op1 = bus.read(PC++);
+        op1 = bus.read(incPC());
         // TODO is address ever being read?
         address = op1;
         value = bus.read(address);
     }
 
     /**
-     * Pre-Index Indirect Address
+     * Zero page indexed with X
+     */
+    private void zpgx() {
+        op1 = bus.read(incPC());
+        // Wrap around if needed
+        address = (op1 + X) & 0xFF;
+        value = bus.read(address);
+    }
+
+    /**
+     * Zero page indexed with Y.
+     * Only used by LDX and STX
+     */
+    private void zpgy() {
+        op1 = bus.read(incPC());
+        // Wrap around if needed
+        address = (op1 + Y) & 0xFF;
+        value = bus.read(address);
+    }
+
+    /**
+     * Relative
+     */
+    private void rel() {
+        op1 = bus.read(incPC());
+        value = op1;
+    }
+
+    /**
+     * Absolute
+     */
+    private void abs() {
+        // Read the first and second byte after instruction for memory address
+        op1 = bus.read(incPC());
+        op2 = bus.read(incPC());
+        address = buildAddress(op1, op2);
+        value = bus.read(address);
+    }
+
+    /**
+     * Absolute indexed with X.
+     * Adds a cycle if cross page occurs
+     */
+    private void absx() {
+        abs();
+
+        if ((address & 0xFF00) != ((address + X) & 0xFF00))
+            cycles++;
+
+        address = (X + address) & 0xFFFF;
+        value = bus.read(address);
+    }
+
+    /**
+     * Absolute indexed with X.
+     * No extra cycles are incremented when cross page happens
+     */
+    private void absxPlus() {
+        abs();
+        address = (X + address) & 0xFFFF;
+        value = bus.read(address);
+    }
+
+    /**
+     * Absolute indexed with Y.
+     * Adds a cycle if cross page occurs
+     */
+    private void absy() {
+        abs();
+
+        if ((address & 0xFF00) != ((address + Y) & 0xFF00))
+            cycles++;
+
+        address = (Y + address) & 0xFFFF;
+        value = bus.read(address);
+    }
+
+    /**
+     * Absolute indexed with Y.
+     * No extra cycles are incremented when cross page happens
+     */
+    private void absyPlus() {
+        abs();
+        address = (Y + address) & 0xFFFF;
+        value = bus.read(address);
+    }
+
+    /**
+     * Indirect.
+     * Only used by JMP
+     */
+    private void ind() {
+        op1 = bus.read(incPC());
+        op2 = bus.read(incPC());
+        int indirect = buildAddress(op1, op2);
+        address = bus.read(indirect);
+        // Fixes first operand (low byte) cross page boundary
+        indirect = buildAddress((op1 + 1) & 0xFF, op2);
+        address += bus.read(indirect) << 8;
+    }
+
+    /**
+     * Indirect X. Also known as Indexed Indirect
      * @return
      */
     private void indx() {
@@ -1152,75 +1262,114 @@ public class CPU {
         // 256 bytes of memory, which wraparound when addition is overflowed.
         // The Index and next byte (within zero page) is considered the 16 bit
         // address
-        op1 = bus.read(PC++);
-        address = (X + op1) & 0xFF;
+        op1 = bus.read(incPC());
+        int indirect = bus.read(op1);
+        address = (X + indirect) & 0xFF;
         value = bus.read(address);
     }
 
     /**
-     * Post-Index Indirect Address (a.k.a. Indirect indexed addressing)
-     * @param extra Whether to consider to add extra cycle of page boundary is crossed.
-     *              Used when cycle if dependent on page boundary
-     * @return
+     * Indirect Y. Also known as Indirect Indexed.
+     * Adds a cycle if cross page occurs
      */
-    private int pos(boolean extra) {
-        // First byte after instruction the 16 bit address.
-        // Index + Y is returned
-        int address = bus.read(PC++) | (bus.read(PC++) << 8);
+    private void indy() {
+        op1 = bus.read(incPC());
+        address = bus.read(op1);
 
-        if( extra &&
-                ((address & 0xFF00) != ((address + Y) & 0xFF00)))
+
+        // Increment cycle if cross page happens
+        if( address != ((address + Y) & 0xFF))
             cycles++;
 
-        return address + Y;
+        address = (address + Y) & 0xFF;
+        value = bus.read(address);
     }
 
     /**
-     * Zero page indexed Addressing.
-     * @param register X or Y register value to sum address with
-     * @return
+     * Indirect Y. Also known as Indirect Indexed.
+     * Used exclusively with STA. No extra cycles are incremented when
+     * cross page happens
      */
-    private int zpgIndx(int register) {
-        // Crossing page boundary is not to be handled
-        return (register + bus.read(PC++)) & 0xFF;
-    }
-
-    /**
-     * Absolute Indexed Addressing.
-     * @param register X or Y register value to sum address with
-     * @param extra Whether to consider to add extra cycle of page boundary is crossed.
-     *              Used when cycle if dependent on page boundary
-     * @return
-     */
-    private int indx(int register, boolean extra) {
-        // First and second byte + register as a 16 bit address
-        int address = bus.read(PC++) | (bus.read(PC++) << 8);
-
-        if ( extra && (address & 0xFF00) != ((address + Y) & 0xFF00) )
-            cycles++;
-
-        return (register + address) & 0xFFFF;
-    }
-
-    /**
-     * indirect address
-     * @return
-     */
-    private int ind() {
-        int low = bus.read(PC++);
-        int high = bus.read(PC++);
-        int address = low | (high << 8);
-        int value = bus.read(address);
-        // Fixes first operand (low byte) cross page boundary
-        address = ( (low + 1) & 0xFF) | (high << 8);
-        value+= bus.read(address) << 8;
-
-        return value;
+    private void indyPlus() {
+        op1 = bus.read(incPC());
+        address = bus.read(op1);
+        address = (op1 + Y) & 0xFF;
+        value = bus.read(address);
     }
 
     //endregion
 
-    public int getCycles() {
-        return cycles;
+    // region Helper methods
+
+    /**
+     * Arithmetic Shift left. Shift value one bit left
+     * @return value shifted
+     */
+    private int asl() {
+        value = value << 1;
+        value =  P.setCFlag(value);
+        P.setZSFlags(value);
+
+        return value;
     }
+
+    /**
+     * Whether to branch execution
+     * @param cond condition flag whether to branch or not
+     */
+    private void branch(boolean cond) {
+        if (!cond)
+            return;
+
+        // Reaching here meaning branch will happen
+        // so increment cycles
+        cycles++;
+
+        int oldPC = PC;
+        PC += value;
+        // Increment cycles if cross page occurs
+        if( (oldPC & 0xFF00) != (PC & 0xFF00))
+            cycles+=1;
+    }
+
+    /**
+     * Push value into Stack
+     * @param value Value that needs to be pushed into stack
+     */
+    private void ph(int value) {
+        bus.write(value, decSP());
+        bus.write(value, decSP());
+    }
+
+    /**
+     * Pull content from Stack
+     * @return
+     */
+    public int pl() {
+        return bus.read(incSP());
+    }
+
+    /**
+     * Rotate Accumulator or Memory content Left through Carry
+     */
+    private int rol() {
+        value = (value << 1) | (P.C ? 1 : 0);
+        P.C = (value & 0x100) == 0x100;
+        value = value & 0xFF;
+        P.setZSFlags(value);
+
+        return value;
+    }
+
+    /**
+     * Build Address from little endian address
+     * @param low least significant byte
+     * @param high high significant byte
+     * @return Integer representing address
+     */
+    private static int buildAddress(int low, int high) {
+        return (high << 8) | low;
+    }
+
+    // endregion
 }
