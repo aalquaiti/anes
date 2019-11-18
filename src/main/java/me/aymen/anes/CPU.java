@@ -149,6 +149,27 @@ public class CPU {
         opcodes[0x4D] = new Inst("EOR", 4, ABS, this::eor);
         opcodes[0x4E] = new Inst("LSR", 6, ABS, this::lsrM);
         opcodes[0x4F] = null;
+
+        // 0x5#
+        opcodes[0x50] = new Inst("BVC", 2, REL, this::bvc);
+        opcodes[0x51] = new Inst("EOR", 5, INDY, this::eor);
+        opcodes[0x52] = null;
+        opcodes[0x53] = null;
+        opcodes[0x54] = null;
+        opcodes[0x55] = new Inst("EOR", 4, ZPGX, this::eor);
+        opcodes[0x56] = new Inst("LSR", 6, ZPGX, this::lsrM);
+        opcodes[0x57] = null;
+        opcodes[0x58] = new Inst("CLI", 2, IMPL, this::cli);
+        opcodes[0x59] = new Inst("EOR", 4, ABSY, this::eor);
+        opcodes[0x5A] = null;
+        opcodes[0x5B] = null;
+        opcodes[0x5C] = null;
+        opcodes[0x5D] = new Inst("EOR", 4, ABSY, this::eor);
+        opcodes[0x5E] = new Inst("LSR", 7, ABSX_PLUS, this::lsrM);
+        opcodes[0x5F] = null;
+
+        // 0x6#
+        
     }
 
     /**
@@ -326,10 +347,6 @@ public class CPU {
                 break;
 
             // EOR
-            case Inst4.EOR_ABS:
-                cycles+=4;
-                eor(abs());
-                break;
             case Inst4.EOR_POS:
                 cycles+=5;
                 eor(pos(true));
@@ -458,11 +475,6 @@ public class CPU {
                 break;
 
             // LSR
-            case Inst4.LSR_ABS:
-                cycles+=6;
-                address = abs();
-                bus.write(lsr(bus.read(address)), address);
-                break;
             case Inst4.LSR_ZPGX:
                 cycles+=6;
                 address = zpgIndx(X);
@@ -895,10 +907,24 @@ public class CPU {
     }
 
     /**
+     * Branch if Overflow clear
+     */
+    public void bvc() {
+        branch(!P.V);
+    }
+
+    /**
      * Clear Carry Flag
      */
     public void clc() {
         P.C = false;
+    }
+
+    /**
+     * Clear Interrupt Disable
+     */
+    public void cli() {
+        P.I = false;
     }
 
 //    // increment memory (by value)
