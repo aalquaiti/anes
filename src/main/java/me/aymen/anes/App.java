@@ -18,7 +18,7 @@ public class App
 
 
         CPU cpu = new CPU(bus);
-        bus.memory[0] = 0x31;
+        bus.memory[0] = 0x40;
         bus.memory[1] = 0xFF;
         bus.memory[2] = 0x40;
         cpu.setPC(0);

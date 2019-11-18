@@ -132,7 +132,23 @@ public class CPU {
         opcodes[0x3E] = new Inst("ROL", 7, ABSX_PLUS, this::rolM);
         opcodes[0x3F] = null;
 
-        // 0x3#
+        // 0x4#
+        opcodes[0x40] = new Inst("RTI", 6, IMPL, this::rti);
+        opcodes[0x41] = new Inst("EOR", 6, INDX, this::eor);
+        opcodes[0x42] = null;
+        opcodes[0x43] = null;
+        opcodes[0x44] = null;
+        opcodes[0x45] = new Inst("EOR", 3, ZPG, this::eor);
+        opcodes[0x46] = new Inst("LSR", 5, ZPG, this::lsrM);
+        opcodes[0x47] = null;
+        opcodes[0x48] = new Inst("PHA", 3, IMPL, this::pha);
+        opcodes[0x49] = new Inst("EOR", 2, IMM, this::eor);
+        opcodes[0x4A] = new Inst("LSR", 2, ACC, this::lsrA);
+        opcodes[0x4B] = null;
+        opcodes[0x4C] = new Inst("JMP", 3, ABS, this::jmp);
+        opcodes[0x4D] = new Inst("EOR", 4, ABS, this::eor);
+        opcodes[0x4E] = new Inst("LSR", 6, ABS, this::lsrM);
+        opcodes[0x4F] = null;
     }
 
     /**
@@ -176,16 +192,6 @@ public class CPU {
             case Inst4.ADC_ABSX:
                 cycles+=4;
                 adc(indx(X, true));
-                break;
-
-            // AND
-            case Inst4.AND_ABSY:
-                cycles+=4;
-                and(zpgIndx(Y));
-                break;
-            case Inst4.AND_ABSX:
-                cycles+=4;
-                and(zpgIndx(X));
                 break;
 
             case Inst4.BCC:
@@ -320,18 +326,6 @@ public class CPU {
                 break;
 
             // EOR
-            case Inst4.EOR_PRE:
-                cycles+=6;
-                eor(indx());
-                break;
-            case Inst4.EOR_ZPG:
-                cycles+=3;
-                eor(zpg());
-                break;
-            case Inst4.EOR_IMM:
-                cycles+=2;
-                eor(imm());
-                break;
             case Inst4.EOR_ABS:
                 cycles+=4;
                 eor(abs());
@@ -380,10 +374,6 @@ public class CPU {
                 break;
 
             // JMP
-            case Inst4.JMP_ABS:
-                cycles+=3;
-                jmp(abs());
-                break;
             case Inst4.JMP_IND:
                 cycles+=5;
                 jmp(ind());
@@ -468,15 +458,6 @@ public class CPU {
                 break;
 
             // LSR
-            case Inst4.LSR_ZPG:
-                cycles+=5;
-                address = zpg();
-                bus.write(lsr(bus.read(address)), address);
-                break;
-            case Inst4.LSR_ACC:
-                cycles+=2;
-                A = lsr(A);
-                break;
             case Inst4.LSR_ABS:
                 cycles+=6;
                 address = abs();
@@ -497,12 +478,6 @@ public class CPU {
                 cycles+=2;
                 break;
 
-
-
-            case Inst4.PHA:
-                cycles+=3;
-                ph(A);
-                break;
             case Inst4.PLA:
                 cycles+=4;
                 A = pl();
@@ -513,12 +488,8 @@ public class CPU {
                 P.setStatus(pl());
                 break;
 
-            // ROL
-            case Inst4.ROL_ABSX:
-                cycles+=7;
-                address = zpgIndx(X);
-                bus.write(rol(bus.read(address)), address);
-                break;
+
+
 
             // ROR
             case Inst4.ROR_ZPG:
@@ -949,18 +920,22 @@ public class CPU {
 //        P.setZSFlags(Y);
 //    }
 //
-//    // Xor accumulator with memory
-//    public void eor(int address) {
-//        int value = bus.read(address);
-//        A = (A ^ value) & 0xFF;
-//        P.setZSFlags(A);
-//    }
-//
-//    // Jump to absolute or indirect address
-//    public void jmp(int address) {
-//        PC = address;
-//    }
-//
+
+    /**
+     * Exclusive OR accumulator with memory
+     */
+    public void eor() {
+        A = (A ^ value) & 0xFF;
+        P.setZSFlags(A);
+    }
+
+    /**
+     * Jump to absolute or indirect address
+     */
+    public void jmp() {
+        PC = address;
+    }
+
 
     /**
      * Jump to Subroutine
@@ -998,23 +973,33 @@ public class CPU {
 //        P.setZSFlags(Y);
 //    }
 //
-//    // Logical Shift Right of Accumulator or Bus
-//    public int lsr(int value) {
-//        int lowBit = value & 0x1;
-//        value = value >> 1;
-//        P.C = lowBit == 0x1;
-//        P.setZFlag(value);
-//        P.S = false;
-//
-//        return value;
-//    }
-//
+
+    /**
+     * Logical Shift Right Accumulator
+     */
+    public void lsrA() {
+        A = lsr();
+    }
+
+    /**
+     * Logical Shift Right Memory Content
+     */
+    public void lsrM() {
+        bus.write(lsr(), address);
+    }
+
     // Logically OR Memory content with Accumulator
     public void ora() {
         A = A | value;
         P.setZSFlags(A);
     }
-//
+
+    /**
+     * Push Accumulator to stack
+     */
+    public void pha() {
+        ph(A);
+    }
 
     /**
      * Push Processor Status.
@@ -1055,15 +1040,15 @@ public class CPU {
 //        return value;
 //    }
 //
-//    // Return from Interrupt
-//    public void rti() {
-//        incSP();
-//        P.setStatus(bus.read(getSP()));
-//        incSP();
-//        PC = bus.read(getSP());
-//        incSP();
-//        PC += (bus.read(getSP()) << 8);
-//    }
+
+    /**
+     * Return from Interrupt
+     */
+    public void rti() {
+        P.setStatus(bus.read(incSP()));
+        PC = bus.read(incSP());
+        PC += (bus.read(incSP()) << 8);
+    }
 //
 //    // Return from Subroutine
 //    public void rts() {
@@ -1332,13 +1317,23 @@ public class CPU {
             cycles+=1;
     }
 
+    // Logical Shift Right of Accumulator or Bus
+    public int lsr() {
+        int lowBit = value & 0x1;
+        value = value >> 1;
+        P.C = lowBit == 0x1;
+        P.setZFlag(value);
+        P.S = false;
+
+        return value;
+    }
+
     /**
      * Push value into Stack
-     * @param value Value that needs to be pushed into stack
+     * @param val Value that needs to be pushed into stack
      */
-    private void ph(int value) {
-        bus.write(value, decSP());
-        bus.write(value, decSP());
+    private void ph(int val) {
+        bus.write(val, decSP());
     }
 
     /**
