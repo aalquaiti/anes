@@ -186,7 +186,22 @@ public class CPU {
         opcodes[0x6F] = null;
 
         // 0x7#
-        
+        opcodes[0x70] = new Inst("BVS", 2, REL, this::bvs);
+        opcodes[0x71] = new Inst("ADC", 5, INDY, this::adc);
+        opcodes[0x72] = null;
+        opcodes[0x73] = null;
+        opcodes[0x74] = null;
+        opcodes[0x75] = new Inst("ADC", 4, ZPGX, this::adc);
+        opcodes[0x76] = new Inst("ROR", 6, ZPGX, this::rorM);
+        opcodes[0x77] = null;
+        opcodes[0x78] = new Inst("SEI", 2, IMPL, this::sei);
+        opcodes[0x79] = new Inst("ADC", 4, ABSY, this::adc);
+        opcodes[0x7A] = null;
+        opcodes[0x7B] = null;
+        opcodes[0x7C] = null;
+        opcodes[0x7D] = new Inst("ADC", 4, ABSX, this::adc);
+        opcodes[0x7E] = new Inst("ROR", 7, ABSX_PLUS, this::rorM);
+        opcodes[0x7F] = null;
     }
 
     /**
@@ -198,35 +213,6 @@ public class CPU {
 
         switch (instruction) {
 
-            // ADC
-            case Inst4.ADC_ZPG:
-                cycles+=3;
-                adc(zpg());
-                break;
-            case Inst4.ADC_IMM:
-                cycles+=2;
-                adc(imm());
-                break;
-            case Inst4.ADC_ABS:
-                cycles+=4;
-                adc(abs());
-                break;
-            case Inst4.ADC_POS:
-                cycles+=5;
-                adc(pos(true));
-                break;
-            case Inst4.ADC_ZPGX:
-                cycles+=4;
-                adc(zpgIndx(X));
-                break;
-            case Inst4.ADC_ABSY:
-                cycles+=4;
-                adc(indx(Y, true));
-                break;
-            case Inst4.ADC_ABSX:
-                cycles+=4;
-                adc(indx(X, true));
-                break;
 
             case Inst4.BCC:
                 cycles+=2;
@@ -482,35 +468,6 @@ public class CPU {
             case Inst4.PLP:
                 cycles+=4;
                 P.setStatus(pl());
-                break;
-
-
-
-
-            // ROR
-            case Inst4.ROR_ZPG:
-                cycles+=5;
-                address = zpg();
-                bus.write(ror(bus.read(address)), address);
-                break;
-            case Inst4.ROR_ACC:
-                cycles+=2;
-                A = rol(A);
-                break;
-            case Inst4.ROR_ABS:
-                cycles+=6;
-                address = abs();
-                bus.write(ror(bus.read(address)), address);
-                break;
-            case Inst4.ROR_ZPGX:
-                cycles+=6;
-                address = zpgIndx(X);
-                bus.write(ror(bus.read(address)), address);
-                break;
-            case Inst4.ROR_ABSX:
-                cycles+=7;
-                address = zpgIndx(X);
-                bus.write(ror(bus.read(address)), address);
                 break;
 
             case Inst4.RTI:
@@ -894,6 +851,13 @@ public class CPU {
     }
 
     /**
+     * Branch if overflow Set
+     */
+    public void bvs() {
+        branch(P.V);
+    }
+
+    /**
      * Clear Carry Flag
      */
     public void clc() {
@@ -1095,6 +1059,14 @@ public class CPU {
     public void sec() {
         P.C = true;
     }
+
+    /**
+     * Set Interrupt Disable
+     */
+    public void sei() {
+        P.I = true;
+    }
+
 //
 //    // Store value in Bus
 //    public void st(int address, int value) {
