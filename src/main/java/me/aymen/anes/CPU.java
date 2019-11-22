@@ -202,6 +202,24 @@ public class CPU {
         opcodes[0x7D] = new Inst("ADC", 4, ABSX, this::adc);
         opcodes[0x7E] = new Inst("ROR", 7, ABSX_PLUS, this::rorM);
         opcodes[0x7F] = null;
+
+        // 0x8#
+        opcodes[0x80] = null;
+        opcodes[0x81] = new Inst("STA", 6, INDX, this::sta);
+        opcodes[0x82] = null;
+        opcodes[0x83] = null;
+        opcodes[0x84] = new Inst("STY", 3, ZPG, this::sty);
+        opcodes[0x85] = new Inst("STA", 3, ZPG, this::sty);
+        opcodes[0x86] = new Inst("STX", 3, ZPG, this::stx);
+        opcodes[0x87] = null;
+        opcodes[0x88] = new Inst("DEY", 2, IMPL, this::dey);
+        opcodes[0x89] = null;
+        opcodes[0x8A] = new Inst("TXA", 2, IMPL, this::txa);
+        opcodes[0x8B] = null;
+        opcodes[0x8C] = new Inst("STY", 4, ABS, this::sty);
+        opcodes[0x8D] = new Inst("STA", 4, ABS, this::sta);
+        opcodes[0x8E] = new Inst("STA", 4, ABS, this::stx);
+        opcodes[0x8F] = null;
     }
 
     /**
@@ -871,6 +889,22 @@ public class CPU {
         P.I = false;
     }
 
+    /**
+     * Decrement Y Register.
+     * Subtracts one
+     */
+    public void dey() {
+        addY(-1);
+    }
+
+    /**
+     * Exclusive OR accumulator with memory
+     */
+    public void eor() {
+        A = (A ^ value) & 0xFF;
+        P.setZSFlags(A);
+    }
+
 //    // increment memory (by value)
 //    public void inc(int value, int address) {
 //        int result = (bus.read(address) + value) & 0xFF;
@@ -890,14 +924,6 @@ public class CPU {
 //        P.setZSFlags(Y);
 //    }
 //
-
-    /**
-     * Exclusive OR accumulator with memory
-     */
-    public void eor() {
-        A = (A ^ value) & 0xFF;
-        P.setZSFlags(A);
-    }
 
     /**
      * Jump to absolute or indirect address
@@ -1067,11 +1093,34 @@ public class CPU {
         P.I = true;
     }
 
-//
-//    // Store value in Bus
-//    public void st(int address, int value) {
-//        bus.write(value, address);
-//    }
+    /**
+     * Store Accumulator into memory
+     */
+    public void sta() {
+        st(A);
+    }
+
+    /**
+     * Store X Register into memory
+     */
+    public void stx() {
+        st(X);
+    }
+
+    /**
+     * Store Y Register into memory
+     */
+    public void sty() {
+        st(Y);
+    }
+
+    /**
+     * Transfer X to Accumulator
+     */
+    public void txa() {
+        A = X;
+        P.setZSFlags(A);
+    }
 
     /**
      * Subtract memory content from given compare value and set C, F and S
@@ -1303,6 +1352,16 @@ public class CPU {
             cycles+=1;
     }
 
+    /**
+     * Add value to Y register
+     * @param val
+     */
+    private void addY(int val) {
+        Y = (Y + val) & 0xFF;
+        P.setZSFlags(Y);
+    }
+
+
     // Logical Shift Right of Accumulator or Bus
     public int lsr() {
         int lowBit = value & 0x1;
@@ -1353,6 +1412,14 @@ public class CPU {
         P.setZSFlags(value);
 
         return value;
+    }
+
+    /**
+     * Store value in Bus
+     * @param val
+     */
+    private void st(int val) {
+        bus.write(val, address);
     }
 
     /**
