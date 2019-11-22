@@ -256,6 +256,24 @@ public class CPU {
         opcodes[0xAD] = new Inst("LDA", 4, ABS, this::lda);
         opcodes[0xAE] = new Inst("LDX", 4, ABS, this::ldx);
         opcodes[0xAF] = null;
+
+        // 0xB#
+        opcodes[0xB0] = new Inst("BCS", 2, REL, this::bcs);
+        opcodes[0xB1] = new Inst("LDA", 5, INDY, this::lda);
+        opcodes[0xB2] = null;
+        opcodes[0xB3] = null;
+        opcodes[0xB4] = new Inst("LDY", 4, ZPGX, this::ldy);
+        opcodes[0xB5] = new Inst("LDA", 4, ZPGX, this::lda);
+        opcodes[0xB6] = new Inst("LDX", 4, ZPGY, this::ldx);
+        opcodes[0xB7] = null;
+        opcodes[0xB8] = new Inst("CLV", 2, IMPL, this::clv);
+        opcodes[0xB9] = new Inst("LDA", 4, ABSY, this::lda);
+        opcodes[0xBA] = new Inst("TSX", 2, IMPL, this::tsx);
+        opcodes[0xBB] = null;
+        opcodes[0xBC] = new Inst("LDY", 4, ABSX, this::ldy);
+        opcodes[0xBD] = new Inst("LDA", 4, ABSX, this::lda);
+        opcodes[0xBE] = new Inst("LDX", 4, ABSY, this::ldx);
+        opcodes[0xBF] = null;
     }
 
     /**
@@ -304,11 +322,7 @@ public class CPU {
             case Inst4.CLI:
                 cycles+=2;
                 P.I = false;
-                break;
-            case Inst4.CLV:
-                cycles+=2;
-                P.I = false;
-                break;
+                break;`
 
             // CMP
             case Inst4.CMP_PRE:
@@ -856,6 +870,13 @@ public class CPU {
     }
 
     /**
+     * Branch if Carry Set
+     */
+    public void bcs() {
+        branch(P.C);
+    }
+
+    /**
      * Clear Carry Flag
      */
     public void clc() {
@@ -867,6 +888,13 @@ public class CPU {
      */
     public void cli() {
         P.I = false;
+    }
+
+    /**
+     * Clear Overflow Flag
+     */
+    public void clv() {
+        P.V = false;
     }
 
     /**
@@ -1128,6 +1156,14 @@ public class CPU {
     public void tay() {
         Y = A;
         P.setZSFlags(Y);
+    }
+
+    /**
+     * Transfer Stack Pointer to X
+     */
+    public void tsx() {
+        X = bus.read(SP);
+        P.setZSFlags(X);
     }
 
     /**
