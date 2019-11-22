@@ -274,6 +274,24 @@ public class CPU {
         opcodes[0xBD] = new Inst("LDA", 4, ABSX, this::lda);
         opcodes[0xBE] = new Inst("LDX", 4, ABSY, this::ldx);
         opcodes[0xBF] = null;
+
+        // 0xC#
+        opcodes[0xC0] = new Inst("CPY", 2, IMM, this::cpy);
+        opcodes[0xC1] = new Inst("CMP", 6, INDX, this::cmp);
+        opcodes[0xC2] = null;
+        opcodes[0xC3] = null;
+        opcodes[0xC4] = new Inst("CPY", 3, ZPG, this::cpy);
+        opcodes[0xC5] = new Inst("CMP", 3, ZPG, this::cmp);
+        opcodes[0xC6] = new Inst("DEC", 5, ZPG, this::dec);
+        opcodes[0xC7] = null;
+        opcodes[0xC8] = new Inst("INY", 2, IMPL, this::iny);
+        opcodes[0xC9] = new Inst("CMP", 2, IMM, this::cmp);
+        opcodes[0xCA] = new Inst("DEX", 2, IMPL, this::dex);
+        opcodes[0xCB] = null;
+        opcodes[0xCC] = new Inst("CPY", 4, ABS, this::cpy);
+        opcodes[0xCD] = new Inst("CMP", 4, ABS, this::cmp);
+        opcodes[0xCE] = new Inst("DEC", 6, ABS, this::dec);
+        opcodes[0xCF] = null;
     }
 
     /**
@@ -290,10 +308,7 @@ public class CPU {
                 cycles+=2;
                 branch(!P.C);
                 break;
-            case Inst4.BCS:
-                cycles+=2;
-                branch(P.C);
-                break;
+
             case Inst4.BEQ:
                 cycles+=2;
                 branch(P.Z);
@@ -440,84 +455,6 @@ public class CPU {
             case Inst4.JMP_IND:
                 cycles+=5;
                 jmp(ind());
-                break;
-
-            // LDA
-            case Inst4.LDA_PRE:
-                cycles+=6;
-                lda(indx());
-                break;
-            case Inst4.LDA_ZPG:
-                cycles+=3;
-                lda(zpg());
-                break;
-            case Inst4.LDA_IMM:
-                cycles+=2;
-                lda(imm());
-                break;
-            case Inst4.LDA_ABS:
-                cycles+=4;
-                lda(abs());
-                break;
-            case Inst4.LDA_POS:
-                cycles+=5;
-                lda(pos(true));
-                break;
-            case Inst4.LDA_ZPGX:
-                cycles+=4;
-                lda(zpgIndx(X));
-                break;
-            case Inst4.LDA_ABSY:
-                cycles+=4;
-                lda(indx(Y, true));
-                break;
-            case Inst4.LDA_ABSX:
-                cycles+=4;
-                lda(indx(X, true));
-                break;
-
-            // LDX
-            case Inst4.LDX_IMM:
-                cycles+=2;
-                ldx(imm());
-                break;
-            case Inst4.LDX_ZPG:
-                cycles+=3;
-                ldx(zpg());
-                break;
-            case Inst4.LDX_ABS:
-                cycles+=4;
-                ldx(abs());
-                break;
-            case Inst4.LDX_ZPGY:
-                cycles+=4;
-                ldx(zpgIndx(Y));
-                break;
-            case Inst4.LDX_ABSY:
-                cycles+=4;
-                ldx(indx(Y, true));
-                break;
-
-            // LDY
-            case Inst4.LDY_IMM:
-                cycles+=2;
-                ldy(imm());
-                break;
-            case Inst4.LDY_ZPG:
-                cycles+=3;
-                ldy(zpg());
-                break;
-            case Inst4.LDY_ABS:
-                cycles+=4;
-                ldy(abs());
-                break;
-            case Inst4.LDY_ZPGX:
-                cycles+=4;
-                ldy(zpgIndx(X));
-                break;
-            case Inst4.LDY_ABSX:
-                cycles+=4;
-                ldy(indx(X, false));
                 break;
 
             case Inst4.NOP:
@@ -898,8 +835,35 @@ public class CPU {
     }
 
     /**
-     * Decrement Y Register.
-     * Subtracts one
+     * Compare Accumulator
+     */
+    public void cmp() {
+        compare(A);
+    }
+
+    /**
+     * Compare Y Register
+     */
+    public void cpy() {
+        compare(Y);
+    }
+
+    /**
+     * Decrement Memory Content by one
+     */
+    public void dec() {
+        addMemory(-1);
+    }
+
+    /**
+     * Decrement X Register by one
+     */
+    public void dex() {
+        addX(-1);
+    }
+
+    /**
+     * Decrement Y Register by one
      */
     public void dey() {
         addY(-1);
@@ -913,25 +877,19 @@ public class CPU {
         P.setZSFlags(A);
     }
 
-//    // increment memory (by value)
-//    public void inc(int value, int address) {
-//        int result = (bus.read(address) + value) & 0xFF;
-//        bus.write(result, address);
-//        P.setZSFlags(result);
-//    }
-//
-//    // increment X register (by value)
-//    public void inx(int value) {
-//        X = (X + value) & 0xFF;
-//        P.setZSFlags(X);
-//    }
-//
-//    // decrement Y register (by 1)
-//    public void iny(int value) {
-//        Y = (Y + value) & 0xFF;
-//        P.setZSFlags(Y);
-//    }
-//
+    /**
+     * Increment X Register by one
+     */
+    public void inx() {
+        addX(1);
+    }
+
+    /**
+     * Increment Y Register by one
+     */
+    public void iny() {
+        addY(1);
+    }
 
     /**
      * Jump to absolute or indirect address
@@ -1174,24 +1132,6 @@ public class CPU {
         P.setZSFlags(A);
     }
 
-    /**
-     * Subtract memory content from given compare value and set C, F and S
-     * flags accordingly
-     * @param cmp Value to compare
-     * @param address memory address of content to compare with
-     */
-    public void compare(int cmp, int address) {
-        int value = bus.read(address);
-
-        // Get 2's complements of value
-        int result = cmp + ((value * -1) & 0xFF);
-        P.setCFlag(result);
-        P.setZFlag(result);
-        P.setSFlag(result);
-    }
-
-
-
     //endregion
 
     //region  Address Modes
@@ -1374,6 +1314,34 @@ public class CPU {
     // region Helper methods
 
     /**
+     * Add value to memory
+     * @param cnt  Value content
+     */
+    public void addMemory(int cnt) {
+        int result = (value + cnt) & 0xFF;
+        bus.write(result, address);
+        P.setZSFlags(result);
+    }
+
+    /**
+     * Add value to X register
+     * @param val
+     */
+    public void addX(int val) {
+        X = (X + val) & 0xFF;
+        P.setZSFlags(X);
+    }
+
+    /**
+     * Add value to Y register
+     * @param val
+     */
+    private void addY(int val) {
+        Y = (Y + val) & 0xFF;
+        P.setZSFlags(Y);
+    }
+
+    /**
      * Arithmetic Shift left. Shift value one bit left
      * @return value shifted
      */
@@ -1405,13 +1373,19 @@ public class CPU {
     }
 
     /**
-     * Add value to Y register
-     * @param val
+     * Subtract memory content from given compare value and set C, F and S
+     * flags accordingly
+     * @param cmp Value to compare
      */
-    private void addY(int val) {
-        Y = (Y + val) & 0xFF;
-        P.setZSFlags(Y);
+    private void compare(int cmp) {
+        // Get 2's complements of value
+        int result = cmp + ((value * -1) & 0xFF);
+        P.setCFlag(result);
+        P.setZFlag(result);
+        P.setSFlag(result);
     }
+
+
 
 
     // Logical Shift Right of Accumulator or Bus
