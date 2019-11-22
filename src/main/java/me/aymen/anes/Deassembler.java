@@ -19,7 +19,7 @@ public class Deassembler {
         modes[IMM] = v -> String.format("#$%02X", v.op1);
         modes[ZPG] = v -> String.format("$%02X", v.op1);
         modes[ZPGX] = v -> String.format("$%02X,X", v.op1);
-//        modes[ZPGY] = this::zpgy;
+        modes[ZPGY] = v -> String.format("$%02X,Y", v.op1);
         modes[REL] = v -> {
             // Relative must return the address relative to current pc
             // Add two to PC as branching will execute two steps before

@@ -239,7 +239,23 @@ public class CPU {
         opcodes[0x9E] = null;
         opcodes[0x9F] = null;
 
-        
+        // 0xA#
+        opcodes[0xA0] = new Inst("LDY", 2, IMM, this::ldy);
+        opcodes[0xA1] = new Inst("LDA", 6, INDX, this::lda);
+        opcodes[0xA2] = new Inst("LDX", 2, IMM, this::ldx);
+        opcodes[0xA3] = null;
+        opcodes[0xA4] = new Inst("LDY", 3, ZPG, this::ldy);
+        opcodes[0xA5] = new Inst("LDA", 3, ZPG, this::lda);
+        opcodes[0xA6] = new Inst("LDX", 3, ZPG, this::ldx);
+        opcodes[0xA7] = null;
+        opcodes[0xA8] = new Inst("TAY", 2, IMPL, this::tay);
+        opcodes[0xA9] = new Inst("LDA", 2, IMM, this::lda);
+        opcodes[0xAA] = new Inst("TAX", 2, IMPL, this::tax);
+        opcodes[0xAB] = null;
+        opcodes[0xAC] = new Inst("LDY", 4, ABS, this::ldy);
+        opcodes[0xAD] = new Inst("LDA", 4, ABS, this::lda);
+        opcodes[0xAE] = new Inst("LDX", 4, ABS, this::ldx);
+        opcodes[0xAF] = null;
     }
 
     /**
@@ -555,65 +571,6 @@ public class CPU {
                 P.I = true;
                 break;
 
-            // STA
-            case Inst4.STA_PRE:
-                cycles+=6;
-                st(indx(), A);
-                break;
-            case Inst4.STA_ZPG:
-                cycles+=3;
-                st(zpg(), A);
-                break;
-            case Inst4.STA_ABS:
-                cycles+=4;
-                st(abs(), A);
-                break;
-            case Inst4.STA_POS:
-                cycles+=6;
-                // Extra cycle is false as its always an extra cycle for STA
-                // than other instructions
-                st(pos(false), A);
-                break;
-            case Inst4.STA_ZPGX:
-                cycles+=4;
-                st(zpgIndx(X), A);
-                break;
-            case Inst4.STA_ABSY:
-                cycles+=5;
-                st(indx(Y, false), A);
-                break;
-            case Inst4.STA_ABSX:
-                cycles+=5;
-                st(indx(X, false), A);
-                break;
-
-            // STX
-            case Inst4.STX_ZPG:
-                cycles+=3;
-                st(zpg(), X);
-                break;
-            case Inst4.STX_ABS:
-                cycles+=4;
-                st(abs(), X);
-                break;
-            case Inst4.STX_ZPGY:
-                cycles+=4;
-                st(zpgIndx(Y), X);
-                break;
-
-            // STY
-            case Inst4.STY_ZPG:
-                cycles+=3;
-                st(zpg(), Y);
-                break;
-            case Inst4.STY_ABS:
-                cycles+=4;
-                st(abs(), Y);
-                break;
-            case Inst4.STY_ZPGX:
-                cycles+=4;
-                st(zpgIndx(X), Y);
-                break;
 
             case Inst4.TAX:
                 cycles+=2;
@@ -971,27 +928,32 @@ public class CPU {
         PC = address;
     }
 //
-//    // Load Accumulator from Bus
-//    public void lda(int address) {
-//        int value = bus.read(address);
-//        A = value;
-//        P.setZSFlags(A);
-//    }
-//
-//    // Load Index Register X from Bus
-//    public void ldx(int address) {
-//        int value = bus.read(address);
-//        X = value;
-//        P.setZSFlags(X);
-//    }
-//
-//    // Load Index Register Y from Bus
-//    public void ldy(int address) {
-//        int value = bus.read(address);
-//        Y = value;
-//        P.setZSFlags(Y);
-//    }
-//
+
+    /**
+     * Load Accumulator from memory
+     */
+    public void lda() {
+        A = value;
+        P.setZSFlags(A);
+    }
+
+    /**
+     * Load X Register from Memory
+     */
+    public void ldx() {
+        X = value;
+        P.setZSFlags(X);
+    }
+
+
+    /**
+     * Load Y Register from memory
+     */
+    public void ldy() {
+        Y = value;
+        P.setZSFlags(Y);
+    }
+
 
     /**
      * Logical Shift Right Accumulator
@@ -1150,6 +1112,22 @@ public class CPU {
      */
     public void txs() {
         bus.write(X, decSP());
+    }
+
+    /**
+     * Transfer Accumulator to X Register
+     */
+    public void tax() {
+        X = A;
+        P.setZSFlags(X);
+    }
+
+    /**
+     * Transfer Accumulator to Y Register
+     */
+    public void tay() {
+        Y = A;
+        P.setZSFlags(Y);
     }
 
     /**
