@@ -218,8 +218,28 @@ public class CPU {
         opcodes[0x8B] = null;
         opcodes[0x8C] = new Inst("STY", 4, ABS, this::sty);
         opcodes[0x8D] = new Inst("STA", 4, ABS, this::sta);
-        opcodes[0x8E] = new Inst("STA", 4, ABS, this::stx);
+        opcodes[0x8E] = new Inst("STX", 4, ABS, this::stx);
         opcodes[0x8F] = null;
+
+        // 0x9#
+        opcodes[0x90] = new Inst("BCC", 2, REL, this::bcc);
+        opcodes[0x91] = new Inst("STA", 6, INDY, this::sta);
+        opcodes[0x92] = null;
+        opcodes[0x93] = null;
+        opcodes[0x94] = new Inst("STY", 4, ZPGX, this::sty);
+        opcodes[0x95] = new Inst("STA", 4, ZPGX, this::sta);
+        opcodes[0x96] = new Inst("STX", 4, ZPGY, this::stx);
+        opcodes[0x97] = null;
+        opcodes[0x98] = new Inst("TYA", 2, IMPL, this::tya);
+        opcodes[0x99] = new Inst("STA", 5, ABSY_PLUS, this::sta);
+        opcodes[0x9A] = new Inst("TXS", 2, IMPL, this::txs);
+        opcodes[0x9B] = null;
+        opcodes[0x9C] = null;
+        opcodes[0x9D] = new Inst("STA", 5, ABSX_PLUS, this::sta);
+        opcodes[0x9E] = null;
+        opcodes[0x9F] = null;
+
+        
     }
 
     /**
@@ -232,7 +252,7 @@ public class CPU {
         switch (instruction) {
 
 
-            case Inst4.BCC:
+            case Inst4.`:
                 cycles+=2;
                 branch(!P.C);
                 break;
@@ -357,10 +377,6 @@ public class CPU {
             case Inst4.DEX:
                 cycles+=2;
                 inx(0xFF);
-                break;
-            case Inst4.DEY:
-                cycles+=2;
-                iny(0xFF);
                 break;
 
             // INC
@@ -876,6 +892,13 @@ public class CPU {
     }
 
     /**
+     * Branch if Carry Clear
+     */
+    public void bcc() {
+        branch(!P.C);
+    }
+
+    /**
      * Clear Carry Flag
      */
     public void clc() {
@@ -1119,6 +1142,21 @@ public class CPU {
      */
     public void txa() {
         A = X;
+        P.setZSFlags(A);
+    }
+
+    /**
+     * Transfer X to Stack Pointer
+     */
+    public void txs() {
+        bus.write(X, decSP());
+    }
+
+    /**
+     * Transfer Y to Accumulator;
+     */
+    public void tya() {
+        A = Y;
         P.setZSFlags(A);
     }
 
