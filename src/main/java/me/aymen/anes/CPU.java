@@ -47,7 +47,7 @@ public class CPU {
         addressMode[IMM] = this::imm;
         addressMode[ZPG] = this::zpg;
         addressMode[ZPGX] = this::zpgx;
-//        addressMode[ZPGY] = this::zpgy;
+        addressMode[ZPGY] = this::zpgy;
         addressMode[REL] = this::rel;
         addressMode[ABS] = this::abs;
         addressMode[ABSX] = this::absx;
@@ -163,7 +163,7 @@ public class CPU {
         opcodes[0x5A] = null;
         opcodes[0x5B] = null;
         opcodes[0x5C] = null;
-        opcodes[0x5D] = new Inst("EOR", 4, ABSY, this::eor);
+        opcodes[0x5D] = new Inst("EOR", 4, ABSX, this::eor);
         opcodes[0x5E] = new Inst("LSR", 7, ABSX_PLUS, this::lsrM);
         opcodes[0x5F] = null;
 
@@ -303,6 +303,13 @@ public class CPU {
         opcodes[0xD6] = new Inst("DEC", 6, ZPGX, this::dec);
         opcodes[0xD7] = null;
         opcodes[0xD8] = new Inst("CLD", 2, IMPL, this::cld);
+        opcodes[0xD9] = new Inst("CMP", 4, ABSY, this::cmp);
+        opcodes[0xDA] = null;
+        opcodes[0xDB] = null;
+        opcodes[0xDC] = null;
+        opcodes[0xDD] = new Inst("CMP", 4, ABSX, this::cmp);
+        opcodes[0xDE] = new Inst("DEC", 7, ABSX_PLUS, this::dec);
+        opcodes[0xDF] = null;
 
         // 0xE#
         opcodes[0xE0] = new Inst("CPX", 2, IMM, this::cpx);
