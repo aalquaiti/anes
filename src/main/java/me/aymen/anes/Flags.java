@@ -48,7 +48,7 @@ public class Flags {
     /**
      * Sign (Negative)
      */
-    public boolean S;
+    public boolean N;
 
 
     public void reset() {
@@ -59,7 +59,7 @@ public class Flags {
         B = false;
         U = true; // Unused. Always set
         V = false;
-        S = false;
+        N = false;
     }
 
     /**
@@ -82,21 +82,21 @@ public class Flags {
     }
 
     /**
-     * Sets the Sign flag
+     * Sets the Negative flag
      * @param value The value to set flags upon
      */
-    public void setSFlag(int value) {
-        S = (value & 0x80) == 0x80;
+    public void setNFlag(int value) {
+        N = (value & 0x80) == 0x80;
     }
 
     /**
-     * Sets the Zero and Sign flag
+     * Sets the Zero and Negative flag
      * @param value The value to set flags upon
      */
-    public void setZSFlags(int value) {
+    public void setZNFlags(int value) {
         // Repeated as to avoid another method call stack
         Z = value == 0;
-        S = (value & 0x80) == 0x80;
+        N = (value & 0x80) == 0x80;
     }
 
     /**
@@ -125,7 +125,7 @@ public class Flags {
                 B ? 1 : 0,
                 1,          // For unused flag
                 V ? 1 : 0,
-                S ? 1 : 0};
+                N ? 1 : 0};
 
         int result = 0;
         int counter = 1;
@@ -149,6 +149,6 @@ public class Flags {
         B = (value & 0x010) == 0x10;
         U = true;
         V = (value & 0x40) == 0x40;
-        S = (value & 0x80) == 0x80;
+        N = (value & 0x80) == 0x80;
     }
 }

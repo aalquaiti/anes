@@ -31,7 +31,7 @@ public class CPUTest {
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
 //        assertEquals(false, cpu.getFlags().V);
-//        assertEquals(false, cpu.getFlags().S);
+//        assertEquals(false, cpu.getFlags().N);
 //    }
 //
 //    /**
@@ -50,7 +50,7 @@ public class CPUTest {
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
 //        assertEquals(true, cpu.getFlags().V);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    /**
@@ -80,7 +80,7 @@ public class CPUTest {
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
 //        assertEquals(true, cpu.getFlags().V);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    /**
@@ -96,7 +96,7 @@ public class CPUTest {
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
 //        assertEquals(false, cpu.getFlags().V);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    /**
@@ -112,7 +112,7 @@ public class CPUTest {
 //
 //        assertEquals(0x10,cpu.getA());
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(false, cpu.getFlags().S);
+//        assertEquals(false, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -120,7 +120,7 @@ public class CPUTest {
 //        assertEquals(0x96, cpu.asl(0xCB));
 //        assertEquals(true, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //
 //    }
 //
@@ -135,7 +135,7 @@ public class CPUTest {
 //        assertEquals(0xA6,cpu.getA());
 //        assertEquals(false, cpu.getFlags().Z);
 //        assertEquals(true, cpu.getFlags().V);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    /**
@@ -160,7 +160,7 @@ public class CPUTest {
 //
 //        assertEquals(true, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //
@@ -173,7 +173,7 @@ public class CPUTest {
 //        assertEquals(0xA4, bus.memory[0x0]);
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -186,7 +186,7 @@ public class CPUTest {
 //
 //        assertEquals(0x43,cpu.getA());
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(false, cpu.getFlags().S);
+//        assertEquals(false, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -197,7 +197,7 @@ public class CPUTest {
 //
 //        assertEquals(0xC1, bus.memory[0x0]);
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -208,7 +208,7 @@ public class CPUTest {
 //
 //        assertEquals(0xAA, cpu.getA());
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -219,7 +219,7 @@ public class CPUTest {
 //        assertEquals(0x06, cpu.getA());
 //        assertEquals(true, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(false, cpu.getFlags().S);
+//        assertEquals(false, cpu.getFlags().N);
 //    }
 //
 //
@@ -233,7 +233,7 @@ public class CPUTest {
 //
 //        assertEquals(0xEB, cpu.getA());
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -243,7 +243,7 @@ public class CPUTest {
 //        assertEquals(0x5C, value);
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(false, cpu.getFlags().S);
+//        assertEquals(false, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -254,7 +254,7 @@ public class CPUTest {
 //        assertEquals(0xF6, value);
 //        assertEquals(true, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -269,7 +269,7 @@ public class CPUTest {
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
 //        assertEquals(false, cpu.getFlags().V);
-//        assertEquals(true, cpu.getFlags().S);
+//        assertEquals(true, cpu.getFlags().N);
 //    }
 //
 //    @Test
@@ -282,6 +282,6 @@ public class CPUTest {
 //        assertEquals(false, cpu.getFlags().C);
 //        assertEquals(false, cpu.getFlags().Z);
 //        assertEquals(false, cpu.getFlags().V);
-//        assertEquals(false, cpu.getFlags().S);
+//        assertEquals(false, cpu.getFlags().N);
 //    }
 }

@@ -292,6 +292,53 @@ public class CPU {
         opcodes[0xCD] = new Inst("CMP", 4, ABS, this::cmp);
         opcodes[0xCE] = new Inst("DEC", 6, ABS, this::dec);
         opcodes[0xCF] = null;
+
+        // 0xD#
+        opcodes[0xD0] = new Inst("BNE", 2, REL, this::bne);
+        opcodes[0xD1] = new Inst("CMP", 5, INDY, this::cmp);
+        opcodes[0xD2] = null;
+        opcodes[0xD3] = null;
+        opcodes[0xD4] = null;
+        opcodes[0xD5] = new Inst("CMP", 4, ZPGX, this::cmp);
+        opcodes[0xD6] = new Inst("DEC", 6, ZPGX, this::dec);
+        opcodes[0xD7] = null;
+        opcodes[0xD8] = new Inst("CLD", 2, IMPL, this::cld);
+
+        // 0xE#
+        opcodes[0xE0] = new Inst("CPX", 2, IMM, this::cpx);
+        opcodes[0xE1] = new Inst("SBC", 6, INDX, this::sbc);
+        opcodes[0xE2] = null;
+        opcodes[0xE3] = null;
+        opcodes[0xE4] = new Inst("CPX", 3, ZPG, this::cpx);
+        opcodes[0xE5] = new Inst("SBC", 3, ZPG, this::sbc);
+        opcodes[0xE6] = new Inst("INC", 5, ZPG, this::inc);
+        opcodes[0xE7] = null;
+        opcodes[0xE8] = new Inst("INX", 2, IMPL, this::inx);
+        opcodes[0xE9] = new Inst("SBC", 2, IMM, this::sbc);
+        opcodes[0xEA] = new Inst("NOP", 2, IMPL, this::nop);
+        opcodes[0xEB] = null;
+        opcodes[0xEC] = new Inst("CPX", 4, ABS, this::cpx);
+        opcodes[0xED] = new Inst("SBC", 4, ABS, this::sbc);
+        opcodes[0xEE] = new Inst("INC", 6, ABS, this::inc);
+        opcodes[0xEF] = null;
+
+        // 0xF#
+        opcodes[0xF0] = new Inst("BEQ", 2, REL, this::beq);
+        opcodes[0xF1] = new Inst("SBC", 5, INDY, this::sbc);
+        opcodes[0xF2] = null;
+        opcodes[0xF3] = null;
+        opcodes[0xF4] = null;
+        opcodes[0xF5] = new Inst("SBC", 4, ZPGX, this::sbc);
+        opcodes[0xF6] = new Inst("INC", 6, ZPGX, this::inc);
+        opcodes[0xF7] = null;
+        opcodes[0xF8] = new Inst("SED", 2, IMPL, this::sed);
+        opcodes[0xF9] = new Inst("SBC", 4, ABSY, this::sbc);
+        opcodes[0xFA] = null;
+        opcodes[0xFB] = null;
+        opcodes[0xFC] = null;
+        opcodes[0xFD] = new Inst("SBC", 4, ABSX, this::sbc);
+        opcodes[0xFE] = new Inst("INC", 7, ABSX_PLUS, this::inc);
+        opcodes[0xFF] = null;
     }
 
     /**
@@ -464,7 +511,7 @@ public class CPU {
             case Inst4.PLA:
                 cycles+=4;
                 A = pl();
-                P.setZSFlags(A);
+                P.setZNFlags(A);
                 break;
             case Inst4.PLP:
                 cycles+=4;
@@ -526,22 +573,22 @@ public class CPU {
             case Inst4.TAX:
                 cycles+=2;
                 X = A;
-                P.setZSFlags(X);
+                P.setZNFlags(X);
                 break;
             case Inst4.TAY:
                 cycles+=2;
                 Y = A;
-                P.setZSFlags(Y);
+                P.setZNFlags(Y);
                 break;
             case Inst4.TSX:
                 cycles+=2;
                 X = bus.read(SP);
-                P.setZSFlags(X);
+                P.setZNFlags(X);
                 break;
             case Inst4.TXA:
                 cycles+=2;
                 A = X;
-                P.setZSFlags(A);
+                P.setZNFlags(A);
                 break;
             case Inst4.TXS:
                 cycles+=2;
@@ -550,7 +597,7 @@ public class CPU {
             case Inst4.TYA:
                 cycles+=2;
                 A = Y;
-                P.setZSFlags(A);
+                P.setZNFlags(A);
                 break;
 
             default:
@@ -715,7 +762,7 @@ public class CPU {
         result = P.setCFlag(result);
         P.setVFlag(A, value, result);
         A = result;
-        P.setZSFlags(A);
+        P.setZNFlags(A);
     }
 
 
@@ -724,7 +771,7 @@ public class CPU {
      */
     public void and() {
         A = A & value;
-        P.setZSFlags(A);
+        P.setZNFlags(A);
     }
 //
     /**
@@ -742,11 +789,18 @@ public class CPU {
     }
 
     /**
+     * Branch if Equal
+     */
+    public void beq() {
+        branch(P.Z);
+    }
+
+    /**
      * Branch on Plus.
      * Branches if Positive
      */
     public void bpl() {
-        branch(!P.S);
+        branch(!P.N);
     }
 //
 
@@ -756,7 +810,7 @@ public class CPU {
     public void bit() {
         int result = A & value;
         P.setZFlag(result);
-        P.setSFlag(value);
+        P.setNFlag(value);
         // Set overflow depending on the 6th bit of the memory content
         P.V = (value & 0x40) == 0x40;
     }
@@ -765,7 +819,14 @@ public class CPU {
      * Branch if Minus
      */
     public void bmi() {
-        branch(P.S);
+        branch(P.N);
+    }
+
+    /**
+     * Branch if Not Equal
+     */
+    public void bne() {
+        branch(!P.Z);
     }
 
     /**
@@ -821,6 +882,13 @@ public class CPU {
     }
 
     /**
+     * Clear Decimal Mode
+     */
+    public void cld() {
+        P.D = false;
+    }
+
+    /**
      * Clear Interrupt Disable
      */
     public void cli() {
@@ -839,6 +907,13 @@ public class CPU {
      */
     public void cmp() {
         compare(A);
+    }
+
+    /**
+     * Compare X Register
+     */
+    public void cpx() {
+        compare(X);
     }
 
     /**
@@ -874,7 +949,14 @@ public class CPU {
      */
     public void eor() {
         A = (A ^ value) & 0xFF;
-        P.setZSFlags(A);
+        P.setZNFlags(A);
+    }
+
+    /**
+     * Increment Memory Content by one
+     */
+    public void inc() {
+        addMemory(1);
     }
 
     /**
@@ -920,7 +1002,7 @@ public class CPU {
      */
     public void lda() {
         A = value;
-        P.setZSFlags(A);
+        P.setZNFlags(A);
     }
 
     /**
@@ -928,7 +1010,7 @@ public class CPU {
      */
     public void ldx() {
         X = value;
-        P.setZSFlags(X);
+        P.setZNFlags(X);
     }
 
 
@@ -937,7 +1019,7 @@ public class CPU {
      */
     public void ldy() {
         Y = value;
-        P.setZSFlags(Y);
+        P.setZNFlags(Y);
     }
 
 
@@ -955,10 +1037,17 @@ public class CPU {
         bus.write(lsr(), address);
     }
 
+    /**
+     * No Operation.
+     */
+    public void nop() {
+        // I'm walkin' here
+    }
+
     // Logically OR Memory content with Accumulator
     public void ora() {
         A = A | value;
-        P.setZSFlags(A);
+        P.setZNFlags(A);
     }
 
     /**
@@ -981,7 +1070,7 @@ public class CPU {
      */
     public void pla() {
         A = pl();
-        P.setZSFlags(A);
+        P.setZNFlags(A);
     }
 
     /**
@@ -1037,24 +1126,36 @@ public class CPU {
         PC += (bus.read(incSP()) << 8);
     }
 
-//    // Subtract Bus from Accumulator with Borrow
-//    public void sbc(int address) {
-//        // Same as ADC. The only difference is value is treated as
-//        // complement value. Code repeated to avoid stack call
-//        int value = 255 -  bus.read(address);
-//        int result = A + value + (P.C ? 1 : 0);
-//
-//        result = P.setCFlag(result);
-//        P.setVFlag(A, value, result);
-//        A = result;
-//        P.setZSFlags(A);
-//    }
+    /**
+     * Subtract Memory content to Accumulator with Carry
+     */
+    public void sbc() {
+        // Same as ADC. The only difference is value is treated as
+        // complement value. Code repeated to avoid stack call
+        value = 255 -  value;
+        int result = A + value + (P.C ? 1 : 0);
+
+        result = P.setCFlag(result);
+        P.setVFlag(A, value, result);
+        A = result;
+        P.setZNFlags(A);
+    }
 
     /**
      * Set Carry Flag
      */
     public void sec() {
         P.C = true;
+    }
+
+    /**
+     * Set Decimal Flag
+     */
+    public void sed() {
+        // Decimal mode is disabled in NES
+        // ADC and SBC instructions will not be affected as
+        // decimal mode is not supported
+        P.D = true;
     }
 
     /**
@@ -1090,7 +1191,7 @@ public class CPU {
      */
     public void txa() {
         A = X;
-        P.setZSFlags(A);
+        P.setZNFlags(A);
     }
 
     /**
@@ -1105,7 +1206,7 @@ public class CPU {
      */
     public void tax() {
         X = A;
-        P.setZSFlags(X);
+        P.setZNFlags(X);
     }
 
     /**
@@ -1113,7 +1214,7 @@ public class CPU {
      */
     public void tay() {
         Y = A;
-        P.setZSFlags(Y);
+        P.setZNFlags(Y);
     }
 
     /**
@@ -1121,7 +1222,7 @@ public class CPU {
      */
     public void tsx() {
         X = bus.read(SP);
-        P.setZSFlags(X);
+        P.setZNFlags(X);
     }
 
     /**
@@ -1129,7 +1230,7 @@ public class CPU {
      */
     public void tya() {
         A = Y;
-        P.setZSFlags(A);
+        P.setZNFlags(A);
     }
 
     //endregion
@@ -1320,7 +1421,7 @@ public class CPU {
     public void addMemory(int cnt) {
         int result = (value + cnt) & 0xFF;
         bus.write(result, address);
-        P.setZSFlags(result);
+        P.setZNFlags(result);
     }
 
     /**
@@ -1329,7 +1430,7 @@ public class CPU {
      */
     public void addX(int val) {
         X = (X + val) & 0xFF;
-        P.setZSFlags(X);
+        P.setZNFlags(X);
     }
 
     /**
@@ -1338,7 +1439,7 @@ public class CPU {
      */
     private void addY(int val) {
         Y = (Y + val) & 0xFF;
-        P.setZSFlags(Y);
+        P.setZNFlags(Y);
     }
 
     /**
@@ -1348,7 +1449,7 @@ public class CPU {
     private int asl() {
         value = value << 1;
         value =  P.setCFlag(value);
-        P.setZSFlags(value);
+        P.setZNFlags(value);
 
         return value;
     }
@@ -1373,7 +1474,7 @@ public class CPU {
     }
 
     /**
-     * Subtract memory content from given compare value and set C, F and S
+     * Subtract memory content from given compare value and set C, F and N
      * flags accordingly
      * @param cmp Value to compare
      */
@@ -1382,11 +1483,8 @@ public class CPU {
         int result = cmp + ((value * -1) & 0xFF);
         P.setCFlag(result);
         P.setZFlag(result);
-        P.setSFlag(result);
+        P.setNFlag(result);
     }
-
-
-
 
     // Logical Shift Right of Accumulator or Bus
     public int lsr() {
@@ -1394,7 +1492,7 @@ public class CPU {
         value = value >> 1;
         P.C = lowBit == 0x1;
         P.setZFlag(value);
-        P.S = false;
+        P.N = false;
 
         return value;
     }
@@ -1422,7 +1520,7 @@ public class CPU {
         value = (value << 1) | (P.C ? 1 : 0);
         P.C = (value & 0x100) == 0x100;
         value = value & 0xFF;
-        P.setZSFlags(value);
+        P.setZNFlags(value);
 
         return value;
     }
@@ -1435,7 +1533,7 @@ public class CPU {
         int lowBit = value & 0x01;
         value = (P.C ? 0x80 : 0) | (value >> 1);
         P.C = (lowBit & 0x01) == 0x01;
-        P.setZSFlags(value);
+        P.setZNFlags(value);
 
         return value;
     }
