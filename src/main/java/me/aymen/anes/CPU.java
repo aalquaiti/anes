@@ -369,13 +369,20 @@ public class CPU {
         opcodes[0x7A] = new Inst("*NOP", 2, IMPL, ()-> {});
         opcodes[0x7C] = new Inst("*NOP", 4, ABSX, ()-> {});
         opcodes[0x80] = new Inst("*NOP", 2, IMM, ()-> {});
+        opcodes[0x83] = new Inst("*SAX", 6, INDX, this::_sax);
+        opcodes[0x87] = new Inst("*SAX", 3, ZPG, this::_sax);
+        opcodes[0x8F] = new Inst("*SAX", 4, ABS, this::_sax);
+        opcodes[0x97] = new Inst("*SAX", 4, ZPGY, this::_sax);
         opcodes[0xA3] = new Inst("*LAX", 6, INDX, this::_lax);
         opcodes[0xA7] = new Inst("*LAX", 3, ZPG, this::_lax);
         opcodes[0xAF] = new Inst("*LAX", 4, ABS, this::_lax);
         opcodes[0xB3] = new Inst("*LAX", 5, INDY, this::_lax);
+        opcodes[0xB7] = new Inst("*LAX", 4, ZPGY, this::_lax);
+        opcodes[0xBF] = new Inst("*LAX", 4, ABSY, this::_lax);
         opcodes[0xD4] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0xDA] = new Inst("*NOP", 2, IMPL, ()-> {});
         opcodes[0xDC] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0xEB] = new Inst("*SBC", 2, IMM, this::sbc);
         opcodes[0xF4] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0xFA] = new Inst("*NOP", 2, IMPL, ()-> {});
         opcodes[0xFC] = new Inst("*NOP", 4, ABSX, ()-> {});
@@ -399,6 +406,10 @@ public class CPU {
 
         // Retrieve the operation mnemonic
         int op = bus.read(currentPC);
+
+        if (currentPC == 0xE7E6) {
+            System.out.println("What up!");
+        }
 
         /**
          * Retrieve the relavent opcode then:
@@ -1069,6 +1080,15 @@ public class CPU {
         X = value;
         P.setZNFlags(value);
     }
+
+    /**
+     * Stores the logical AND the Accumulator and X Register
+     */
+    public void _sax() {
+        // No flags are affected
+        bus.write(A & X, address);
+    }
+
     //end region
 
     //region  Address Modes
@@ -1096,7 +1116,6 @@ public class CPU {
     private void zpg() {
         // Read first byte only after instruction for memory address
         op1 = bus.read(incPC());
-        // TODO is address ever being read?
         address = op1;
         value = bus.read(address);
     }
@@ -1225,15 +1244,20 @@ public class CPU {
      * Adds a cycle if cross page occurs
      */
     private void indy() {
+        // Indirect is calculated by reading the value of the zero page
+        // address, then Y is added to it.
+        // The result is the least significant byte of the indirect address.
+        // The addition's carry (if any) is added to the next zero page address
         op1 = bus.read(incPC());
-        address = bus.read(op1);
-
+        int low = bus.read(op1);
+        int high = bus.read((op1 + 1) & 0xFF);
+        int index = buildAddress(low, high);
 
         // Increment cycle if cross page happens
-        if( address != ((address + Y) & 0xFF))
+        if( index != ((index + Y) & 0xFF))
             cycles++;
 
-        address = (address + Y) & 0xFF;
+        address = (index + Y) & 0xFFFF;
         value = bus.read(address);
     }
 
@@ -1244,8 +1268,10 @@ public class CPU {
      */
     private void indyPlus() {
         op1 = bus.read(incPC());
-        address = bus.read(op1);
-        address = (op1 + Y) & 0xFF;
+        int low = bus.read(op1);
+        int high = bus.read((op1 + 1) & 0xFF);
+        int index = buildAddress(low, high);
+        address = (index + Y) & 0xFFFF;
         value = bus.read(address);
     }
 

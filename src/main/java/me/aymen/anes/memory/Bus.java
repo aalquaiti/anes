@@ -49,7 +49,7 @@ public class Bus {
 
         index = mapIndex(index);
 
-        memory[index] = value;
+        memory[index] = value & 0xFF;
     }
 
     /**
