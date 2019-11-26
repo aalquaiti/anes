@@ -2,9 +2,13 @@ package me.aymen.anes;
 
 import me.aymen.anes.memory.Bus;
 import me.aymen.anes.util.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static me.aymen.anes.AddressMode.*;
 
 public class CPU {
+    private static Logger logger = LoggerFactory.getLogger(CPU.class);
 
     // CPU Components
     private Bus bus;
@@ -209,7 +213,7 @@ public class CPU {
         opcodes[0x82] = null;
         opcodes[0x83] = null;
         opcodes[0x84] = new Inst("STY", 3, ZPG, this::sty);
-        opcodes[0x85] = new Inst("STA", 3, ZPG, this::sty);
+        opcodes[0x85] = new Inst("STA", 3, ZPG, this::sta);
         opcodes[0x86] = new Inst("STX", 3, ZPG, this::stx);
         opcodes[0x87] = null;
         opcodes[0x88] = new Inst("DEY", 2, IMPL, this::dey);
@@ -346,276 +350,52 @@ public class CPU {
         opcodes[0xFD] = new Inst("SBC", 4, ABSX, this::sbc);
         opcodes[0xFE] = new Inst("INC", 7, ABSX_PLUS, this::inc);
         opcodes[0xFF] = null;
+
+        // Unofficial opcodes
+        opcodes[0x04] = new Inst("*NOP", 3, ZPG, ()-> {});
+        opcodes[0x0C] = new Inst("*NOP", 4, ABS, ()-> {});
+        opcodes[0x14] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x1A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x1C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x34] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x3A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x3C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x44] = new Inst("*NOP", 3, ZPG, ()-> {});
+        opcodes[0x54] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x5A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x5C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x64] = new Inst("*NOP", 3, ZPG, ()-> {});
+        opcodes[0x74] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x7A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x7C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x80] = new Inst("*NOP", 2, IMM, ()-> {});
+        opcodes[0xA3] = new Inst("*LAX", 6, INDX, this::_lax);
+        opcodes[0xA7] = new Inst("*LAX", 3, ZPG, this::_lax);
+        opcodes[0xAF] = new Inst("*LAX", 4, ABS, this::_lax);
+        opcodes[0xB3] = new Inst("*LAX", 5, INDY, this::_lax);
+        opcodes[0xD4] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0xDA] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0xDC] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0xF4] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0xFA] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0xFC] = new Inst("*NOP", 4, ABSX, ()-> {});
     }
 
     /**
-     * Execute instruction at current program counter
+     * Represents execution one opcode statement
+     * @return String representation of the operation performed in Assembly
+     * Code
      */
-    /*public void execute() {
-        int address;
-        int instruction = bus.read(PC++);
-
-        switch (instruction) {
-
-
-            case Inst4.`:
-                cycles+=2;
-                branch(!P.C);
-                break;
-
-            case Inst4.BEQ:
-                cycles+=2;
-                branch(P.Z);
-                break;
-
-            case Inst4.BIT_ABS:
-                cycles+=3;
-                bit(abs());
-                break;
-            case Inst4.BNE:
-                cycles+=2;
-                branch(!P.Z);
-                break;
-            case Inst4.BVC:
-                cycles+=2;
-                branch(!P.V);
-                break;
-            case Inst4.BVS:
-                cycles+=2;
-                branch(P.V);
-                break;
-            case Inst4.CLD:
-                cycles+=2;
-                P.D = false;
-                break;
-            case Inst4.CLI:
-                cycles+=2;
-                P.I = false;
-                break;`
-
-            // CMP
-            case Inst4.CMP_PRE:
-                cycles+=6;
-                compare(A, indx());
-                break;
-            case Inst4.CMP_ZPG:
-                cycles+=3;
-                compare(A, zpg());
-                break;
-            case Inst4.CMP_IMM:
-                cycles+=2;
-                compare(A, imm());
-                break;
-            case Inst4.CMP_ABS:
-                cycles+=4;
-                compare(A, abs());
-                break;
-            case Inst4.CMP_POS:
-                cycles+=5;
-                compare(A, pos(true));
-                break;
-            case Inst4.CMP_ZPGX:
-                cycles+=4;
-                compare(A, zpgIndx(X));
-                break;
-            case Inst4.CMP_ABSY:
-                cycles+=4;
-                compare(A, indx(Y, true));
-                break;
-            case Inst4.CMP_ABSX:
-                cycles+=4;
-                compare(A, indx(X, true));
-                break;
-
-            // CPX
-            case Inst4.CPX_IMM:
-                cycles+=2;
-                compare(X, imm());
-                break;
-            case Inst4.CPX_ZPG:
-                cycles+=3;
-                compare(X, zpg());
-                break;
-            case Inst4.CPX_ABS:
-                cycles+=4;
-                compare(X, abs());
-                break;
-
-            // CPY
-            case Inst4.CPY_IMM:
-                cycles+=2;
-                compare(Y, imm());
-                break;
-            case Inst4.CPY_ZPG:
-                cycles+=3;
-                compare(Y, zpg());
-                break;
-            case Inst4.CPY_ABS:
-                cycles+=4;
-                compare(Y, abs());
-                break;
-
-            // DEC
-            case Inst4.DEC_ZPG:
-                cycles+=5;
-                inc(0xFF, zpg());
-                break;
-            case Inst4.DEC_ABS:
-                cycles+=6;
-                inc(0xFF, abs());
-                break;
-            case Inst4.DEC_ZPGX:
-                cycles+=6;
-                inc(0xFF, zpg());
-                break;
-            case Inst4.DEC_ABSX:
-                cycles+=7;
-                inc(0xFF, indx(X, false));
-                break;
-
-            case Inst4.DEX:
-                cycles+=2;
-                inx(0xFF);
-                break;
-
-            // INC
-            case Inst4.INC_ZPG:
-                cycles+=5;
-                inc(0x01, zpg());
-                break;
-            case Inst4.INC_ABS:
-                cycles+=6;
-                inc(0x01, abs());
-                break;
-            case Inst4.INC_ZPGX:
-                cycles+=6;
-                inc(0x01, zpg());
-                break;
-            case Inst4.INC_ABSX:
-                cycles+=7;
-                inc(0x01, indx(X, false));
-                break;
-
-            case Inst4.INX:
-                cycles+=2;
-                inx(0x01);
-                break;
-            case Inst4.INY:
-                cycles+=2;
-                iny(0x01);
-                break;
-
-            // JMP
-            case Inst4.JMP_IND:
-                cycles+=5;
-                jmp(ind());
-                break;
-
-            case Inst4.NOP:
-                cycles+=2;
-                break;
-
-            case Inst4.PLA:
-                cycles+=4;
-                A = pl();
-                P.setZNFlags(A);
-                break;
-            case Inst4.PLP:
-                cycles+=4;
-                P.setStatus(pl());
-                break;
-
-            case Inst4.RTI:
-                cycles+=6;
-                rti();
-                break;
-
-            // SBC
-            case Inst4.SBC_PRE:
-                cycles+=6;
-                sbc(indx());
-                break;
-            case Inst4.SBC_ZPG:
-                cycles+=3;
-                sbc(zpg());
-                break;
-            case Inst4.SBC_IMM:
-                cycles+=2;
-                sbc(imm());
-                break;
-            case Inst4.SBC_ABS:
-                cycles+=4;
-                sbc(abs());
-                break;
-            case Inst4.SBC_POS:
-                cycles+=5;
-                sbc(pos(true));
-                break;
-            case Inst4.SBC_ZPGX:
-                cycles+=4;
-                sbc(zpgIndx(X));
-                break;
-            case Inst4.SBC_ABSY:
-                cycles+=4;
-                sbc(indx(Y, true));
-                break;
-            case Inst4.SBC_ABSX:
-                cycles+=4;
-                sbc(indx(X, true));
-                break;
-
-            case Inst4.SED:
-                // Decimal mode is disabled in NES
-                // ADC and SBC instructions will not be affected as
-                // decimal mode is not supported
-                cycles+=2;
-                P.D = true;
-                break;
-            case Inst4.SEI:
-                cycles+=2;
-                P.I = true;
-                break;
-
-
-            case Inst4.TAX:
-                cycles+=2;
-                X = A;
-                P.setZNFlags(X);
-                break;
-            case Inst4.TAY:
-                cycles+=2;
-                Y = A;
-                P.setZNFlags(Y);
-                break;
-            case Inst4.TSX:
-                cycles+=2;
-                X = bus.read(SP);
-                P.setZNFlags(X);
-                break;
-            case Inst4.TXA:
-                cycles+=2;
-                A = X;
-                P.setZNFlags(A);
-                break;
-            case Inst4.TXS:
-                cycles+=2;
-                bus.write(X, SP);
-                break;
-            case Inst4.TYA:
-                cycles+=2;
-                A = Y;
-                P.setZNFlags(A);
-                break;
-
-            default:
-                throw new RuntimeException("Unrecognized instruction");
-        }
-    } */
-
-    public String tick() {
+    public CPUStatus tick() {
+        // Reset values. Set to -1 to indicate it was not set
+        op1 = -1;
+        op2 = -1;
+        address = -1;
+        value = 0;
 
         // Read the current PC then increment it
         int currentPC = incPC();
+        int currentCycles = cycles;
 
         // Retrieve the operation mnemonic
         int op = bus.read(currentPC);
@@ -632,24 +412,39 @@ public class CPU {
          *  3. Update cycles count
          */
         Inst opcode = opcodes[op];
+        if (opcode == null)
+            logger.error(
+                    String.format("Detected unsupported opcode: $%02X", op));
         addressMode[opcode.mode].process();
         opcode.operation.process();
         cycles += opcode.cycles;
 
-        return Deassembler.analyse(currentPC, opcode, op1, op2);
+        // Retrieve status after each tick
+        CPUStatus status = new CPUStatus();
+        status.PC = currentPC;
+        status.op = op;
+        status.op1 = op1;
+        status.op2 = op2;
+        status.opcode = opcode;
+        status.A = A;
+        status.X = X;
+        status.Y = Y;
+        status.P = P;
+        status.SP = SP;
+        status.cycle = cycles - currentCycles;
+        status.cycleCount = cycles;
+
+        return status;
     }
 
-//    public void start() {
-//        reset();
-//
-//        while(true) {
-//            // TODO - Implement
-//            // increment cycles
-//            // execute OP_CODE code
-//
-//            execute();
-//        }
-//    }
+    /**
+     * Executes ticks indefinitely
+     */
+    public void start() {
+        while(true) {
+            tick();
+        }
+    }
 
     /**
      * Reset the CPU to an initial state
@@ -663,13 +458,15 @@ public class CPU {
         A = 0;
         X = 0;
         Y = 0;
-        SP = 0x01FF;
+        SP = 0xFF;
         P = new Flags();
-        P.setStatus(0x34);
+        P.setStatus(0x24);
 
         // Must point to reset vector which is at index
         // 0xFFFD (High) and 0xFFFC (low)
         PC = bus.read(0xFFFC) | (bus.read(0xFFFD) << 8);
+        // TODO check that cycles is increased due to a fetch operation
+        cycles+=7;
     }
 
     public int getA() {
@@ -731,8 +528,8 @@ public class CPU {
      * @return SP value after increment
      */
     public int incSP() {
-        SP =  (SP + 1) & 0x100;
-        return SP;
+        SP =  (SP + 1) & 0xFF;
+        return SP + 0x100;
     }
 
     /**
@@ -742,8 +539,8 @@ public class CPU {
      * @return previous SP value before decrement
      */
     public int decSP() {
-        int previous = SP;
-        SP =  (SP - 1) & 0x100;
+        int previous = SP + 0x100;
+        SP =  (SP - 1) & 0xFF;
         return previous;
     }
 
@@ -771,7 +568,6 @@ public class CPU {
         A = result;
         P.setZNFlags(A);
     }
-
 
     /**
      * Logical And memory with accumulator
@@ -844,11 +640,11 @@ public class CPU {
         // address will be brk + 2. One already increased when reading the
         // instruction, and one is done below
         incPC();
-        P.I = true;
+        P.B = true;
         // Write PC and processor status
-        bus.write(PC >> 8, decSP());
-        bus.write(PC & 0xFF, decSP());
-        bus.write(P.getStatus(), decSP());
+        ph(PC >> 8);
+        ph(PC & 0xFF);
+        ph(P.getStatus());
         // Set PC to interrupt vector address
         PC = bus.read(0xFFFE) | (bus.read(0xFFFF) << 8);
     }
@@ -984,6 +780,11 @@ public class CPU {
      * Jump to absolute or indirect address
      */
     public void jmp() {
+//        // Low byte
+//        ph(PC & 0xFF);
+//        // High byte
+//        ph(PC >> 8);
+
         PC = address;
     }
 
@@ -995,11 +796,12 @@ public class CPU {
         // TODO check if implementation is correct
         // It is expected that the jsr will store the address  (minus one)
         // to the stack then jump to given address
-        decPC();
         // High byte
-        bus.write(PC >> 8, decSP());
+        decPC();
+        ph(PC >> 8);
         // Low byte
-        bus.write(PC & 0xFF, decSP());
+        ph(PC & 0xFF);
+
         PC = address;
     }
 //
@@ -1069,7 +871,12 @@ public class CPU {
      * Pushes a copy of status into stack
      */
     public void php() {
-        ph(P.getStatus());
+        // PHP pushes a copy of the Process status, setting bit 4 and 5 to 1
+        // (i.e Flags B and U which is unused).
+        // It does not change Process Status (P)
+        // See: PLP and RTI
+        int status = P.getStatus() | 0x10;
+        ph(status);
     }
 
     /**
@@ -1084,7 +891,11 @@ public class CPU {
      * Pull Processor Status
      */
     public void plp() {
-        P.setStatus(pl());
+        // Ignores bit 4 and 5
+        // Bit five is always ignored by default and set to 1
+        // See: PHP
+        int status = pl() & 0xEF;
+        P.setStatus(status);
     }
 
     /**
@@ -1119,9 +930,12 @@ public class CPU {
      * Return from Interrupt
      */
     public void rti() {
-        P.setStatus(bus.read(incSP()));
-        PC = bus.read(incSP());
-        PC += (bus.read(incSP()) << 8);
+        // Ignore bit 4 and 5
+        // See: PHP
+        int status = pl() & 0xE7;
+        P.setStatus(status);
+        PC = pl();
+        PC += (pl() << 8);
     }
 //
 
@@ -1129,8 +943,11 @@ public class CPU {
      * Return from Subroutine
      */
     public void rts() {
-        PC = bus.read(incSP());
-        PC += (bus.read(incSP()) << 8);
+        // Program Counter is pulled from stack
+        PC = pl();
+        PC += (pl() << 8);
+        // See: JSR
+        incPC();
     }
 
     /**
@@ -1205,7 +1022,7 @@ public class CPU {
      * Transfer X to Stack Pointer
      */
     public void txs() {
-        bus.write(X, decSP());
+        SP = X;
     }
 
     /**
@@ -1228,7 +1045,7 @@ public class CPU {
      * Transfer Stack Pointer to X
      */
     public void tsx() {
-        X = bus.read(SP);
+        X = SP;
         P.setZNFlags(X);
     }
 
@@ -1241,6 +1058,18 @@ public class CPU {
     }
 
     //endregion
+
+    //region unofficial opcodes methods
+
+    /**
+     * Load Accumulator and X Register from Memory
+     */
+    public void _lax() {
+        A = value;
+        X = value;
+        P.setZNFlags(value);
+    }
+    //end region
 
     //region  Address Modes
 
@@ -1255,7 +1084,8 @@ public class CPU {
      * Immediate
      */
     private void imm() {
-        op1 = incPC();
+        address = incPC();
+        op1 = bus.read(address);
         value = op1;
     }
 
@@ -1297,7 +1127,8 @@ public class CPU {
      */
     private void rel() {
         op1 = bus.read(incPC());
-        value = op1;
+        // Read as byte as its a signed value
+        value = (byte) op1;
     }
 
     /**
@@ -1378,13 +1209,14 @@ public class CPU {
      * @return
      */
     private void indx() {
-        // X + first byte after instruction as memory address to access first
-        // 256 bytes of memory, which wraparound when addition is overflowed.
-        // The Index and next byte (within zero page) is considered the 16 bit
-        // address
+        // The least significant address to access is basically stored at value
+        // op1 + X (wrapped within zero page)
+        // The low and next byte (also wrapped within zero page) 's value
+        // is the 16 bit address, which is then used to retrieve value
         op1 = bus.read(incPC());
-        int indirect = bus.read(op1);
-        address = (X + indirect) & 0xFF;
+        int low = (op1 + X) & 0xFF;
+        int high = (low + 1) & 0xFF;
+        address = buildAddress(bus.read(low), bus.read(high));
         value = bus.read(address);
     }
 
@@ -1481,14 +1313,12 @@ public class CPU {
     }
 
     /**
-     * Subtract memory content from given compare value and set C, F and N
-     * flags accordingly
+     * Compare value and set C, F and N flags accordingly
      * @param cmp Value to compare
      */
     private void compare(int cmp) {
-        // Get 2's complements of value
-        int result = cmp + ((value * -1) & 0xFF);
-        P.setCFlag(result);
+        int result = cmp - value;
+        P.C = cmp >= value;
         P.setZFlag(result);
         P.setNFlag(result);
     }

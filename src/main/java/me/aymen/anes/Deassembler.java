@@ -10,8 +10,14 @@ import static me.aymen.anes.AddressMode.*;
  * it in assembly language
  */
 public class Deassembler {
-    private static Function<OPInfo, String>[] modes =
+    
+    // Used to represent address modes
+    private static Function<CPUStatus, String>[] modes =
             new Function[AddressMode.SIZE];
+    
+    // Used to show memory address and content according to address mode
+    private static Function<CPUStatus, String>[] mem =
+            new Function[AddressMode.SIZE]; 
     
     static {
         modes[IMPL] =  v -> "";
@@ -25,7 +31,7 @@ public class Deassembler {
             // Add two to PC as branching will execute two steps before
             // branching or not if op1 is positive
             // op1 will include a signed value so must be treated as byte
-            int address = v.pc + ((v.op1 & 0xF0) != 0xF0 ? 2 : 0);
+            int address = v.PC + ((v.op1 & 0xF0) != 0xF0 ? 2 : 0);
             address += (byte) v.op1;
             // Wrap within 0xFFFF
             address &= 0xFFFF;
@@ -44,19 +50,28 @@ public class Deassembler {
     }
 
     /**
-     * Analyse an instruction and return an assembly language representation
-     * in the format:
-     * ####     OP OP OP
-     * Example
-     * C000     ADC $00FF
-     * @param pc Program Counter
-     * @param opcode Instruction to analyse
-     * @param op1 Second byte of the operation
-     * @param op2 Third byte of the operation
+     * Analyse an instruction and return an assembly language representation.
+     * Example:
+     * C000  6D FF 00  ADC $00FF
+     * A:## X:## Y:## P:## SP:## CYC:## COUNT:####
+     * @param s cpu status
      * @return String representation
      */
-    public static String analyse(int pc, Inst opcode, int op1, int op2) {
-        return String.format("%04X    %s %s", pc, opcode.name,
-                modes[opcode.mode].apply(new OPInfo(op1, op2, pc)));
+    public static String analyse(CPUStatus s) {
+        String op1 = s.op1 == -1? "  " : String.format("%02X", s.op1);
+        String op2 = s.op2 == -1? "  " : String.format("%02X", s.op2);
+        return String.format("%04X  %02X %s %s%8s  %s", s.PC, s.op, op1,
+                op2, s.opcode.name, modes[s.opcode.mode].apply(s));
+    }
+
+    /**
+     * Shows the CPU and PPU status in String format
+     * @param s CPU Status
+     * @return
+     */
+    public static String showStatus(CPUStatus s) {
+        return String.format("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d " +
+                "SUM: %d", s.A, s.X, s.Y, s.P.getStatus(), s.SP, s.cycle,
+                s.cycleCount);
     }
 }

@@ -64,12 +64,16 @@ public class Bus {
             throw new IllegalArgumentException("Accessing beyond memory boundary at");
         }
 
+        // Cartridge Space (0x4020 to 0xFFFF)
+        if (index >= 0x4020)
+            return index;
+
         // NES APU Space (0x4000 to 0x4017)
         // Disabled NES APU and IO registers Space (0x4018 to 0x401F)
         // Cartridge Space (0x4020 to 0xFFFF)
         // All accessed directly
         if ( (index & 0x4000) == 0x4000)
-            return memory[index];
+            return index;
 
         // IO Registers Space (0x2000 to 0x3FFF)
         if ( (index & 0x2000) == 0x2000) {

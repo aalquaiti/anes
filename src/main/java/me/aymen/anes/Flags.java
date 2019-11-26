@@ -29,7 +29,6 @@ public class Flags {
      */
     public boolean D;
 
-
     /**
      * Break
      */
@@ -51,7 +50,7 @@ public class Flags {
     public boolean N;
 
 
-    public void reset() {
+    private void reset() {
         C = false;
         Z = false;
         I = false;
@@ -129,9 +128,9 @@ public class Flags {
 
         int result = 0;
         int counter = 1;
-        for(int i = 0; i < value.length; i++) {
-            result += counter * value[i];
-            counter*= 2;
+        for (int item : value) {
+            result += counter * item;
+            counter *= 2;
         }
 
         return result;
