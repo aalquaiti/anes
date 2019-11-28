@@ -352,19 +352,43 @@ public class CPU {
         opcodes[0xFF] = null;
 
         // Unofficial opcodes
+        opcodes[0x03] = new Inst("*SLO", 8, INDX, this::_slo);
         opcodes[0x04] = new Inst("*NOP", 3, ZPG, ()-> {});
+        opcodes[0x07] = new Inst("*SLO", 4, ZPG, this::_slo);
         opcodes[0x0C] = new Inst("*NOP", 4, ABS, ()-> {});
+        opcodes[0x0F] = new Inst("*SLO", 6, ABS, this::_slo);
+        opcodes[0x13] = new Inst("*SLO", 8, INDY_PLUS, this::_slo);
         opcodes[0x14] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x17] = new Inst("*SLO", 6, ZPGX, this::_slo);
         opcodes[0x1A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x1B] = new Inst("*SLO", 7, ABSY_PLUS, this::_slo);
         opcodes[0x1C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x1F] = new Inst("*SLO", 7, ABSX_PLUS, this::_slo);
+        opcodes[0x23] = new Inst("*RLA", 8, INDX, this::_rla);
+        opcodes[0x27] = new Inst("*RLA", 5, ZPG, this::_rla);
+        opcodes[0x2F] = new Inst("*RLA", 6, ABS, this::_rla);
+        opcodes[0x33] = new Inst("*RLA", 8, INDY_PLUS, this::_rla);
         opcodes[0x34] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x37] = new Inst("*RLA", 6, ZPGX, this::_rla);
         opcodes[0x3A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x3B] = new Inst("*RLA", 7, ABSY_PLUS, this::_rla);
         opcodes[0x3C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x3F] = new Inst("*RLA", 7, ABSX_PLUS, this::_rla);
+        opcodes[0x43] = new Inst("*SRE", 8, INDX, this::_sre);
         opcodes[0x44] = new Inst("*NOP", 3, ZPG, ()-> {});
+        opcodes[0x47] = new Inst("*SRE", 5, ZPG, this::_sre);
+        opcodes[0x4F] = new Inst("*SRE", 6, ABS, this::_sre);
+        opcodes[0x53] = new Inst("*SRE", 6, INDY_PLUS, this::_sre);
         opcodes[0x54] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x57] = new Inst("*SRE", 6, ZPGX, this::_sre);
         opcodes[0x5A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x5B] = new Inst("*SRE", 7, ABSY_PLUS, this::_sre);
         opcodes[0x5C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x5F] = new Inst("*SRE", 7, ABSX_PLUS, this::_sre);
+        opcodes[0x63] = new Inst("*RRA", 7, INDX, this::_rra);
         opcodes[0x64] = new Inst("*NOP", 3, ZPG, ()-> {});
+        opcodes[0x67] = new Inst("*RRA", 5, ZPG, this::_rra);
+        //opcodes[0x6F] = new Inst("*RRA", 6, ABS, this::_rra);
         opcodes[0x74] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0x7A] = new Inst("*NOP", 2, IMPL, ()-> {});
         opcodes[0x7C] = new Inst("*NOP", 4, ABSX, ()-> {});
@@ -379,13 +403,27 @@ public class CPU {
         opcodes[0xB3] = new Inst("*LAX", 5, INDY, this::_lax);
         opcodes[0xB7] = new Inst("*LAX", 4, ZPGY, this::_lax);
         opcodes[0xBF] = new Inst("*LAX", 4, ABSY, this::_lax);
+        opcodes[0xC3] = new Inst("*DCP", 8, INDX, this::_dcp);
+        opcodes[0xC7] = new Inst("*DCP", 5, ZPG, this::_dcp);
+        opcodes[0xCF] = new Inst("*DCP", 6, ABS, this::_dcp);
+        opcodes[0xD3] = new Inst("*DCP", 8, INDY, this::_dcp);
         opcodes[0xD4] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0xD7] = new Inst("*DCP", 6, ZPGX, this::_dcp);
         opcodes[0xDA] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0xDB] = new Inst("*DCP", 7, ABSY_PLUS, this::_dcp);
         opcodes[0xDC] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0xDF] = new Inst("*DCP", 7, ABSX_PLUS, this::_dcp);
+        opcodes[0xE3] = new Inst("*ISB", 8, INDX, this::_isb);
+        opcodes[0xE7] = new Inst("*ISB", 5, ZPG, this::_isb);
         opcodes[0xEB] = new Inst("*SBC", 2, IMM, this::sbc);
+        opcodes[0xEF] = new Inst("*ISB", 6, ABS, this::_isb);
+        opcodes[0xF3] = new Inst("*ISB", 8, INDY_PLUS, this::_isb);
         opcodes[0xF4] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0xF7] = new Inst("*ISB", 6, ZPGX, this::_isb);
         opcodes[0xFA] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0xFB] = new Inst("*ISB", 7, ABSY_PLUS, this::_isb);
         opcodes[0xFC] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0xFF] = new Inst("*ISB", 7, ABSX_PLUS, this::_isb);
     }
 
     /**
@@ -407,9 +445,10 @@ public class CPU {
         // Retrieve the operation mnemonic
         int op = bus.read(currentPC);
 
-        if (currentPC == 0xE7E6) {
-            System.out.println("What up!");
-        }
+        // TODO delete me
+//        if (currentPC == 0xF225) {
+//            System.out.println("What up!");
+//        }
 
         /**
          * Retrieve the relavent opcode then:
@@ -864,7 +903,9 @@ public class CPU {
         // I'm walkin' here
     }
 
-    // Logically OR Memory content with Accumulator
+    /**
+     * Logically OR Memory content with Accumulator
+     */
     public void ora() {
         A = A | value;
         P.setZNFlags(A);
@@ -1073,6 +1114,26 @@ public class CPU {
     //region unofficial opcodes methods
 
     /**
+     * Performs DEC followed by CMP
+     */
+    public void _dcp() {
+        dec();
+        // Reread value stored after it change it
+        value = bus.read(address);
+        cmp();
+    }
+
+    /**
+     * Performs INC followed by SBC
+     */
+    public void _isb() {
+        inc();
+        // Reread value stored after it change it
+        value = bus.read(address);
+        sbc();
+    }
+
+    /**
      * Load Accumulator and X Register from Memory
      */
     public void _lax() {
@@ -1082,11 +1143,43 @@ public class CPU {
     }
 
     /**
+     * Performs ROL followed by AND on the result
+     */
+    public void _rla() {
+        value = rol();
+        and();
+    }
+
+    /**
+     * Performs ROR followed by ADC on the result
+     */
+    public void _rra() {
+        value = ror();
+        adc();
+    }
+
+    /**
      * Stores the logical AND the Accumulator and X Register
      */
     public void _sax() {
         // No flags are affected
         bus.write(A & X, address);
+    }
+
+    /**
+     * Performs ASL followed by ORA on the result
+     */
+    public void _slo() {
+        value = asl();
+        ora();
+    }
+
+    /**
+     * Performs LSR followed by EOR on the result
+     */
+    public void _sre() {
+        value = lsr();
+        eor();
     }
 
     //end region
@@ -1349,7 +1442,10 @@ public class CPU {
         P.setNFlag(result);
     }
 
-    // Logical Shift Right of Accumulator or Bus
+    /**
+     * Logical Shift Right of Accumulator or Memory
+     * @return
+     */
     public int lsr() {
         int lowBit = value & 0x1;
         value = value >> 1;
