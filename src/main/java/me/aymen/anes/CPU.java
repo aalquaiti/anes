@@ -87,7 +87,7 @@ public class CPU {
         opcodes[0x12] = null;
         opcodes[0x13] = null;
         opcodes[0x14] = null;
-        opcodes[0x15] = new Inst("ORA", 5, ZPGX, this::ora);
+        opcodes[0x15] = new Inst("ORA", 4, ZPGX, this::ora);
         opcodes[0x16] = new Inst("ASL", 6, ZPGX, this::aslM);
         opcodes[0x17] = null;
         opcodes[0x18] = new Inst("CLC", 2, IMPL, this::clc);
@@ -227,7 +227,7 @@ public class CPU {
 
         // 0x9#
         opcodes[0x90] = new Inst("BCC", 2, REL, this::bcc);
-        opcodes[0x91] = new Inst("STA", 6, INDY, this::sta);
+        opcodes[0x91] = new Inst("STA", 6, INDY_PLUS, this::sta);
         opcodes[0x92] = null;
         opcodes[0x93] = null;
         opcodes[0x94] = new Inst("STY", 4, ZPGX, this::sty);
@@ -388,10 +388,14 @@ public class CPU {
         opcodes[0x63] = new Inst("*RRA", 7, INDX, this::_rra);
         opcodes[0x64] = new Inst("*NOP", 3, ZPG, ()-> {});
         opcodes[0x67] = new Inst("*RRA", 5, ZPG, this::_rra);
-        //opcodes[0x6F] = new Inst("*RRA", 6, ABS, this::_rra);
+        opcodes[0x6F] = new Inst("*RRA", 6, ABS, this::_rra);
+        opcodes[0x73] = new Inst("*RRA", 8, INDY_PLUS, this::_rra);
         opcodes[0x74] = new Inst("*NOP", 4, ZPGX, ()-> {});
+        opcodes[0x77] = new Inst("*RRA", 6, ZPGX, this::_rra);
         opcodes[0x7A] = new Inst("*NOP", 2, IMPL, ()-> {});
+        opcodes[0x7B] = new Inst("*RRA", 7, ABSY_PLUS, this::_rra);
         opcodes[0x7C] = new Inst("*NOP", 4, ABSX, ()-> {});
+        opcodes[0x7F] = new Inst("*RRA", 7, ABSX_PLUS, this::_rra);
         opcodes[0x80] = new Inst("*NOP", 2, IMM, ()-> {});
         opcodes[0x83] = new Inst("*SAX", 6, INDX, this::_sax);
         opcodes[0x87] = new Inst("*SAX", 3, ZPG, this::_sax);
@@ -1347,7 +1351,7 @@ public class CPU {
         int index = buildAddress(low, high);
 
         // Increment cycle if cross page happens
-        if( index != ((index + Y) & 0xFF))
+        if( low != ((low + Y) & 0xFF))
             cycles++;
 
         address = (index + Y) & 0xFFFF;
