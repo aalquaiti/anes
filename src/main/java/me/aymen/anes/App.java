@@ -30,7 +30,7 @@ public class App
 
 
                 status = cpu.tick();
-                String message = String.format("%-40s%s", Deassembler
+                String message = String.format("%-50s%s", Deassembler
                         .analyse(status), Deassembler.showStatus(status));
                 System.out.println(message + " TICK: " + i);
 

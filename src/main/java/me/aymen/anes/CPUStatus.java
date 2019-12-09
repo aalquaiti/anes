@@ -16,6 +16,7 @@ public class CPUStatus {
     public int SP;
     public int cycle;
     public int cycleCount;
+    public int address;
 
     public CPUStatus() {
 

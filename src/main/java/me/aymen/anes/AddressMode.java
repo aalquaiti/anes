@@ -57,24 +57,24 @@ public interface AddressMode {
     /**
      * Absolute indexed with X
      */
-    int ABSX = 9;
+    int ABSX_P = 9;
 
     /**
      * Absolute indexed with X.
      * No cycle is incremented when cross page occurs.
      */
-    int ABSX_PLUS = 10;
+    int ABSX_O = 10;
 
     /**
      * Absolute indexed with Y
      */
-    int ABSY = 11;
+    int ABSY_P = 11;
 
     /**
      * Absolute indexed with Y.
      * No cycle is incremented when cross page occurs.
      */
-    int ABSY_PLUS = 12;
+    int ABSY_O = 12;
 
     /**
      * Indirect
@@ -89,11 +89,11 @@ public interface AddressMode {
     /**
      * Indirect Y. Also known as  Indirect Indexed
      */
-    int INDY = 15;
+    int INDY_P = 15;
 
     /**
      * Indirect Y. Also known as  Indirect Indexed.
      * No cycle is incremented when cross page occurs. Used only with STA
      */
-    int INDY_PLUS = 16;
+    int INDY_O = 16;
 }

@@ -39,14 +39,14 @@ public class Deassembler {
             return String.format("$%04X", address);
         };
         modes[ABS] = v -> String.format("$%02X%02X", v.op2, v.op1);
-        modes[ABSX] = v -> String.format("$%02X%02X,X", v.op2, v.op1);
-        modes[ABSX_PLUS] = modes[ABSX];
-        modes[ABSY] = v -> String.format("$%02X%02X,Y", v.op2, v.op1);
-        modes[ABSY_PLUS] = modes[ABSY];
+        modes[ABSX_P] = v -> String.format("$%02X%02X,X", v.op2, v.op1);
+        modes[ABSX_O] = modes[ABSX_P];
+        modes[ABSY_P] = v -> String.format("$%02X%02X,Y", v.op2, v.op1);
+        modes[ABSY_O] = modes[ABSY_P];
         modes[IND] = v -> String.format("($%02X%02X)", v.op2, v.op1);
-        modes[INDX] = v -> String.format("($%02X,X)", v.op1);
-        modes[INDY] = v -> String.format("($%02X),Y", v.op1);
-        modes[INDY_PLUS] = modes[INDY];
+        modes[INDX] = v -> String.format("($%02X,X) -> $%04X", v.op1, v.address);
+        modes[INDY_P] = v -> String.format("($%02X),Y -> $%04X", v.op1, v.address);
+        modes[INDY_O] = modes[INDY_P];
     }
 
     /**

@@ -54,14 +54,14 @@ public class CPU {
         addressMode[ZPGY] = this::zpgy;
         addressMode[REL] = this::rel;
         addressMode[ABS] = this::abs;
-        addressMode[ABSX] = this::absx;
-        addressMode[ABSX_PLUS] = this::absxPlus;
-        addressMode[ABSY] = this::absy;
-        addressMode[ABSY_PLUS] = this::absyPlus;
+        addressMode[ABSX_P] = this::absx;
+        addressMode[ABSX_O] = this::absxPlus;
+        addressMode[ABSY_P] = this::absy;
+        addressMode[ABSY_O] = this::absyPlus;
         addressMode[IND] = this::ind;
         addressMode[INDX] = this::indx;
-        addressMode[INDY] = this::indy;
-        addressMode[INDY_PLUS ] = this::indyPlus;
+        addressMode[INDY_P] = this::indy;
+        addressMode[INDY_O] = this::indyPlus;
 
         // 0x0#
         opcodes[0x00] = new Inst("BRK", 7, IMPL, this::brk);
@@ -83,7 +83,7 @@ public class CPU {
 
         // 0x1#
         opcodes[0x10] = new Inst("BPL", 2, REL, this::bpl);
-        opcodes[0x11] = new Inst("ORA", 5, INDY, this::ora);
+        opcodes[0x11] = new Inst("ORA", 5, INDY_P, this::ora);
         opcodes[0x12] = null;
         opcodes[0x13] = null;
         opcodes[0x14] = null;
@@ -91,12 +91,12 @@ public class CPU {
         opcodes[0x16] = new Inst("ASL", 6, ZPGX, this::aslM);
         opcodes[0x17] = null;
         opcodes[0x18] = new Inst("CLC", 2, IMPL, this::clc);
-        opcodes[0x19] = new Inst("ORA", 4, ABSY, this::ora);
+        opcodes[0x19] = new Inst("ORA", 4, ABSY_P, this::ora);
         opcodes[0x1A] = null;
         opcodes[0x1B] = null;
         opcodes[0x1C] = null;
-        opcodes[0x1D] = new Inst("ORA", 4, ABSX, this::ora);
-        opcodes[0x1E] = new Inst("ASL", 7, ABSX_PLUS, this::aslM);
+        opcodes[0x1D] = new Inst("ORA", 4, ABSX_P, this::ora);
+        opcodes[0x1E] = new Inst("ASL", 7, ABSX_O, this::aslM);
         opcodes[0x1F] = null;
 
         // 0x2#
@@ -119,7 +119,7 @@ public class CPU {
 
         // 0x3#
         opcodes[0x30] = new Inst("BMI", 2, REL, this::bmi);
-        opcodes[0x31] = new Inst("AND", 5, INDY, this::and);
+        opcodes[0x31] = new Inst("AND", 5, INDY_P, this::and);
         opcodes[0x32] = null;
         opcodes[0x33] = null;
         opcodes[0x34] = null;
@@ -127,12 +127,12 @@ public class CPU {
         opcodes[0x36] = new Inst("ROL", 6, ZPGX, this::rolM);
         opcodes[0x37] = null;
         opcodes[0x38] = new Inst("SEC", 2, IMPL, this::sec);
-        opcodes[0x39] = new Inst("AND", 4, ABSY, this::and);
+        opcodes[0x39] = new Inst("AND", 4, ABSY_P, this::and);
         opcodes[0x3A] = null;
         opcodes[0x3B] = null;
         opcodes[0x3C] = null;
-        opcodes[0x3D] = new Inst("AND", 4, ABSX, this::and);
-        opcodes[0x3E] = new Inst("ROL", 7, ABSX_PLUS, this::rolM);
+        opcodes[0x3D] = new Inst("AND", 4, ABSX_P, this::and);
+        opcodes[0x3E] = new Inst("ROL", 7, ABSX_O, this::rolM);
         opcodes[0x3F] = null;
 
         // 0x4#
@@ -155,7 +155,7 @@ public class CPU {
 
         // 0x5#
         opcodes[0x50] = new Inst("BVC", 2, REL, this::bvc);
-        opcodes[0x51] = new Inst("EOR", 5, INDY, this::eor);
+        opcodes[0x51] = new Inst("EOR", 5, INDY_P, this::eor);
         opcodes[0x52] = null;
         opcodes[0x53] = null;
         opcodes[0x54] = null;
@@ -163,12 +163,12 @@ public class CPU {
         opcodes[0x56] = new Inst("LSR", 6, ZPGX, this::lsrM);
         opcodes[0x57] = null;
         opcodes[0x58] = new Inst("CLI", 2, IMPL, this::cli);
-        opcodes[0x59] = new Inst("EOR", 4, ABSY, this::eor);
+        opcodes[0x59] = new Inst("EOR", 4, ABSY_P, this::eor);
         opcodes[0x5A] = null;
         opcodes[0x5B] = null;
         opcodes[0x5C] = null;
-        opcodes[0x5D] = new Inst("EOR", 4, ABSX, this::eor);
-        opcodes[0x5E] = new Inst("LSR", 7, ABSX_PLUS, this::lsrM);
+        opcodes[0x5D] = new Inst("EOR", 4, ABSX_P, this::eor);
+        opcodes[0x5E] = new Inst("LSR", 7, ABSX_O, this::lsrM);
         opcodes[0x5F] = null;
 
         // 0x6#
@@ -191,7 +191,7 @@ public class CPU {
 
         // 0x7#
         opcodes[0x70] = new Inst("BVS", 2, REL, this::bvs);
-        opcodes[0x71] = new Inst("ADC", 5, INDY, this::adc);
+        opcodes[0x71] = new Inst("ADC", 5, INDY_P, this::adc);
         opcodes[0x72] = null;
         opcodes[0x73] = null;
         opcodes[0x74] = null;
@@ -199,12 +199,12 @@ public class CPU {
         opcodes[0x76] = new Inst("ROR", 6, ZPGX, this::rorM);
         opcodes[0x77] = null;
         opcodes[0x78] = new Inst("SEI", 2, IMPL, this::sei);
-        opcodes[0x79] = new Inst("ADC", 4, ABSY, this::adc);
+        opcodes[0x79] = new Inst("ADC", 4, ABSY_P, this::adc);
         opcodes[0x7A] = null;
         opcodes[0x7B] = null;
         opcodes[0x7C] = null;
-        opcodes[0x7D] = new Inst("ADC", 4, ABSX, this::adc);
-        opcodes[0x7E] = new Inst("ROR", 7, ABSX_PLUS, this::rorM);
+        opcodes[0x7D] = new Inst("ADC", 4, ABSX_P, this::adc);
+        opcodes[0x7E] = new Inst("ROR", 7, ABSX_O, this::rorM);
         opcodes[0x7F] = null;
 
         // 0x8#
@@ -227,7 +227,7 @@ public class CPU {
 
         // 0x9#
         opcodes[0x90] = new Inst("BCC", 2, REL, this::bcc);
-        opcodes[0x91] = new Inst("STA", 6, INDY_PLUS, this::sta);
+        opcodes[0x91] = new Inst("STA", 6, INDY_O, this::sta);
         opcodes[0x92] = null;
         opcodes[0x93] = null;
         opcodes[0x94] = new Inst("STY", 4, ZPGX, this::sty);
@@ -235,11 +235,11 @@ public class CPU {
         opcodes[0x96] = new Inst("STX", 4, ZPGY, this::stx);
         opcodes[0x97] = null;
         opcodes[0x98] = new Inst("TYA", 2, IMPL, this::tya);
-        opcodes[0x99] = new Inst("STA", 5, ABSY_PLUS, this::sta);
+        opcodes[0x99] = new Inst("STA", 5, ABSY_O, this::sta);
         opcodes[0x9A] = new Inst("TXS", 2, IMPL, this::txs);
         opcodes[0x9B] = null;
         opcodes[0x9C] = null;
-        opcodes[0x9D] = new Inst("STA", 5, ABSX_PLUS, this::sta);
+        opcodes[0x9D] = new Inst("STA", 5, ABSX_O, this::sta);
         opcodes[0x9E] = null;
         opcodes[0x9F] = null;
 
@@ -263,7 +263,7 @@ public class CPU {
 
         // 0xB#
         opcodes[0xB0] = new Inst("BCS", 2, REL, this::bcs);
-        opcodes[0xB1] = new Inst("LDA", 5, INDY, this::lda);
+        opcodes[0xB1] = new Inst("LDA", 5, INDY_P, this::lda);
         opcodes[0xB2] = null;
         opcodes[0xB3] = null;
         opcodes[0xB4] = new Inst("LDY", 4, ZPGX, this::ldy);
@@ -271,12 +271,12 @@ public class CPU {
         opcodes[0xB6] = new Inst("LDX", 4, ZPGY, this::ldx);
         opcodes[0xB7] = null;
         opcodes[0xB8] = new Inst("CLV", 2, IMPL, this::clv);
-        opcodes[0xB9] = new Inst("LDA", 4, ABSY, this::lda);
+        opcodes[0xB9] = new Inst("LDA", 4, ABSY_P, this::lda);
         opcodes[0xBA] = new Inst("TSX", 2, IMPL, this::tsx);
         opcodes[0xBB] = null;
-        opcodes[0xBC] = new Inst("LDY", 4, ABSX, this::ldy);
-        opcodes[0xBD] = new Inst("LDA", 4, ABSX, this::lda);
-        opcodes[0xBE] = new Inst("LDX", 4, ABSY, this::ldx);
+        opcodes[0xBC] = new Inst("LDY", 4, ABSX_P, this::ldy);
+        opcodes[0xBD] = new Inst("LDA", 4, ABSX_P, this::lda);
+        opcodes[0xBE] = new Inst("LDX", 4, ABSY_P, this::ldx);
         opcodes[0xBF] = null;
 
         // 0xC#
@@ -299,7 +299,7 @@ public class CPU {
 
         // 0xD#
         opcodes[0xD0] = new Inst("BNE", 2, REL, this::bne);
-        opcodes[0xD1] = new Inst("CMP", 5, INDY, this::cmp);
+        opcodes[0xD1] = new Inst("CMP", 5, INDY_P, this::cmp);
         opcodes[0xD2] = null;
         opcodes[0xD3] = null;
         opcodes[0xD4] = null;
@@ -307,12 +307,12 @@ public class CPU {
         opcodes[0xD6] = new Inst("DEC", 6, ZPGX, this::dec);
         opcodes[0xD7] = null;
         opcodes[0xD8] = new Inst("CLD", 2, IMPL, this::cld);
-        opcodes[0xD9] = new Inst("CMP", 4, ABSY, this::cmp);
+        opcodes[0xD9] = new Inst("CMP", 4, ABSY_P, this::cmp);
         opcodes[0xDA] = null;
         opcodes[0xDB] = null;
         opcodes[0xDC] = null;
-        opcodes[0xDD] = new Inst("CMP", 4, ABSX, this::cmp);
-        opcodes[0xDE] = new Inst("DEC", 7, ABSX_PLUS, this::dec);
+        opcodes[0xDD] = new Inst("CMP", 4, ABSX_P, this::cmp);
+        opcodes[0xDE] = new Inst("DEC", 7, ABSX_O, this::dec);
         opcodes[0xDF] = null;
 
         // 0xE#
@@ -335,7 +335,7 @@ public class CPU {
 
         // 0xF#
         opcodes[0xF0] = new Inst("BEQ", 2, REL, this::beq);
-        opcodes[0xF1] = new Inst("SBC", 5, INDY, this::sbc);
+        opcodes[0xF1] = new Inst("SBC", 5, INDY_P, this::sbc);
         opcodes[0xF2] = null;
         opcodes[0xF3] = null;
         opcodes[0xF4] = null;
@@ -343,12 +343,12 @@ public class CPU {
         opcodes[0xF6] = new Inst("INC", 6, ZPGX, this::inc);
         opcodes[0xF7] = null;
         opcodes[0xF8] = new Inst("SED", 2, IMPL, this::sed);
-        opcodes[0xF9] = new Inst("SBC", 4, ABSY, this::sbc);
+        opcodes[0xF9] = new Inst("SBC", 4, ABSY_P, this::sbc);
         opcodes[0xFA] = null;
         opcodes[0xFB] = null;
         opcodes[0xFC] = null;
-        opcodes[0xFD] = new Inst("SBC", 4, ABSX, this::sbc);
-        opcodes[0xFE] = new Inst("INC", 7, ABSX_PLUS, this::inc);
+        opcodes[0xFD] = new Inst("SBC", 4, ABSX_P, this::sbc);
+        opcodes[0xFE] = new Inst("INC", 7, ABSX_O, this::inc);
         opcodes[0xFF] = null;
 
         // Unofficial opcodes
@@ -357,45 +357,45 @@ public class CPU {
         opcodes[0x07] = new Inst("*SLO", 4, ZPG, this::_slo);
         opcodes[0x0C] = new Inst("*NOP", 4, ABS, ()-> {});
         opcodes[0x0F] = new Inst("*SLO", 6, ABS, this::_slo);
-        opcodes[0x13] = new Inst("*SLO", 8, INDY_PLUS, this::_slo);
+        opcodes[0x13] = new Inst("*SLO", 8, INDY_O, this::_slo);
         opcodes[0x14] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0x17] = new Inst("*SLO", 6, ZPGX, this::_slo);
         opcodes[0x1A] = new Inst("*NOP", 2, IMPL, ()-> {});
-        opcodes[0x1B] = new Inst("*SLO", 7, ABSY_PLUS, this::_slo);
-        opcodes[0x1C] = new Inst("*NOP", 4, ABSX, ()-> {});
-        opcodes[0x1F] = new Inst("*SLO", 7, ABSX_PLUS, this::_slo);
+        opcodes[0x1B] = new Inst("*SLO", 7, ABSY_O, this::_slo);
+        opcodes[0x1C] = new Inst("*NOP", 4, ABSX_P, ()-> {});
+        opcodes[0x1F] = new Inst("*SLO", 7, ABSX_O, this::_slo);
         opcodes[0x23] = new Inst("*RLA", 8, INDX, this::_rla);
         opcodes[0x27] = new Inst("*RLA", 5, ZPG, this::_rla);
         opcodes[0x2F] = new Inst("*RLA", 6, ABS, this::_rla);
-        opcodes[0x33] = new Inst("*RLA", 8, INDY_PLUS, this::_rla);
+        opcodes[0x33] = new Inst("*RLA", 8, INDY_O, this::_rla);
         opcodes[0x34] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0x37] = new Inst("*RLA", 6, ZPGX, this::_rla);
         opcodes[0x3A] = new Inst("*NOP", 2, IMPL, ()-> {});
-        opcodes[0x3B] = new Inst("*RLA", 7, ABSY_PLUS, this::_rla);
-        opcodes[0x3C] = new Inst("*NOP", 4, ABSX, ()-> {});
-        opcodes[0x3F] = new Inst("*RLA", 7, ABSX_PLUS, this::_rla);
+        opcodes[0x3B] = new Inst("*RLA", 7, ABSY_O, this::_rla);
+        opcodes[0x3C] = new Inst("*NOP", 4, ABSX_P, ()-> {});
+        opcodes[0x3F] = new Inst("*RLA", 7, ABSX_O, this::_rla);
         opcodes[0x43] = new Inst("*SRE", 8, INDX, this::_sre);
         opcodes[0x44] = new Inst("*NOP", 3, ZPG, ()-> {});
         opcodes[0x47] = new Inst("*SRE", 5, ZPG, this::_sre);
         opcodes[0x4F] = new Inst("*SRE", 6, ABS, this::_sre);
-        opcodes[0x53] = new Inst("*SRE", 6, INDY_PLUS, this::_sre);
+        opcodes[0x53] = new Inst("*SRE", 8, INDY_O, this::_sre);
         opcodes[0x54] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0x57] = new Inst("*SRE", 6, ZPGX, this::_sre);
         opcodes[0x5A] = new Inst("*NOP", 2, IMPL, ()-> {});
-        opcodes[0x5B] = new Inst("*SRE", 7, ABSY_PLUS, this::_sre);
-        opcodes[0x5C] = new Inst("*NOP", 4, ABSX, ()-> {});
-        opcodes[0x5F] = new Inst("*SRE", 7, ABSX_PLUS, this::_sre);
-        opcodes[0x63] = new Inst("*RRA", 7, INDX, this::_rra);
+        opcodes[0x5B] = new Inst("*SRE", 7, ABSY_O, this::_sre);
+        opcodes[0x5C] = new Inst("*NOP", 4, ABSX_P, ()-> {});
+        opcodes[0x5F] = new Inst("*SRE", 7, ABSX_O, this::_sre);
+        opcodes[0x63] = new Inst("*RRA", 8, INDX, this::_rra);
         opcodes[0x64] = new Inst("*NOP", 3, ZPG, ()-> {});
         opcodes[0x67] = new Inst("*RRA", 5, ZPG, this::_rra);
         opcodes[0x6F] = new Inst("*RRA", 6, ABS, this::_rra);
-        opcodes[0x73] = new Inst("*RRA", 8, INDY_PLUS, this::_rra);
+        opcodes[0x73] = new Inst("*RRA", 8, INDY_O, this::_rra);
         opcodes[0x74] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0x77] = new Inst("*RRA", 6, ZPGX, this::_rra);
         opcodes[0x7A] = new Inst("*NOP", 2, IMPL, ()-> {});
-        opcodes[0x7B] = new Inst("*RRA", 7, ABSY_PLUS, this::_rra);
-        opcodes[0x7C] = new Inst("*NOP", 4, ABSX, ()-> {});
-        opcodes[0x7F] = new Inst("*RRA", 7, ABSX_PLUS, this::_rra);
+        opcodes[0x7B] = new Inst("*RRA", 7, ABSY_O, this::_rra);
+        opcodes[0x7C] = new Inst("*NOP", 4, ABSX_P, ()-> {});
+        opcodes[0x7F] = new Inst("*RRA", 7, ABSX_O, this::_rra);
         opcodes[0x80] = new Inst("*NOP", 2, IMM, ()-> {});
         opcodes[0x83] = new Inst("*SAX", 6, INDX, this::_sax);
         opcodes[0x87] = new Inst("*SAX", 3, ZPG, this::_sax);
@@ -404,30 +404,30 @@ public class CPU {
         opcodes[0xA3] = new Inst("*LAX", 6, INDX, this::_lax);
         opcodes[0xA7] = new Inst("*LAX", 3, ZPG, this::_lax);
         opcodes[0xAF] = new Inst("*LAX", 4, ABS, this::_lax);
-        opcodes[0xB3] = new Inst("*LAX", 5, INDY, this::_lax);
+        opcodes[0xB3] = new Inst("*LAX", 5, INDY_P, this::_lax);
         opcodes[0xB7] = new Inst("*LAX", 4, ZPGY, this::_lax);
-        opcodes[0xBF] = new Inst("*LAX", 4, ABSY, this::_lax);
+        opcodes[0xBF] = new Inst("*LAX", 4, ABSY_P, this::_lax);
         opcodes[0xC3] = new Inst("*DCP", 8, INDX, this::_dcp);
         opcodes[0xC7] = new Inst("*DCP", 5, ZPG, this::_dcp);
         opcodes[0xCF] = new Inst("*DCP", 6, ABS, this::_dcp);
-        opcodes[0xD3] = new Inst("*DCP", 8, INDY, this::_dcp);
+        opcodes[0xD3] = new Inst("*DCP", 8, INDY_O, this::_dcp);
         opcodes[0xD4] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0xD7] = new Inst("*DCP", 6, ZPGX, this::_dcp);
         opcodes[0xDA] = new Inst("*NOP", 2, IMPL, ()-> {});
-        opcodes[0xDB] = new Inst("*DCP", 7, ABSY_PLUS, this::_dcp);
-        opcodes[0xDC] = new Inst("*NOP", 4, ABSX, ()-> {});
-        opcodes[0xDF] = new Inst("*DCP", 7, ABSX_PLUS, this::_dcp);
+        opcodes[0xDB] = new Inst("*DCP", 7, ABSY_O, this::_dcp);
+        opcodes[0xDC] = new Inst("*NOP", 4, ABSX_P, ()-> {});
+        opcodes[0xDF] = new Inst("*DCP", 7, ABSX_O, this::_dcp);
         opcodes[0xE3] = new Inst("*ISB", 8, INDX, this::_isb);
         opcodes[0xE7] = new Inst("*ISB", 5, ZPG, this::_isb);
         opcodes[0xEB] = new Inst("*SBC", 2, IMM, this::sbc);
         opcodes[0xEF] = new Inst("*ISB", 6, ABS, this::_isb);
-        opcodes[0xF3] = new Inst("*ISB", 8, INDY_PLUS, this::_isb);
+        opcodes[0xF3] = new Inst("*ISB", 8, INDY_O, this::_isb);
         opcodes[0xF4] = new Inst("*NOP", 4, ZPGX, ()-> {});
         opcodes[0xF7] = new Inst("*ISB", 6, ZPGX, this::_isb);
         opcodes[0xFA] = new Inst("*NOP", 2, IMPL, ()-> {});
-        opcodes[0xFB] = new Inst("*ISB", 7, ABSY_PLUS, this::_isb);
-        opcodes[0xFC] = new Inst("*NOP", 4, ABSX, ()-> {});
-        opcodes[0xFF] = new Inst("*ISB", 7, ABSX_PLUS, this::_isb);
+        opcodes[0xFB] = new Inst("*ISB", 7, ABSY_O, this::_isb);
+        opcodes[0xFC] = new Inst("*NOP", 4, ABSX_P, ()-> {});
+        opcodes[0xFF] = new Inst("*ISB", 7, ABSX_O, this::_isb);
     }
 
     /**
@@ -436,6 +436,14 @@ public class CPU {
      * Code
      */
     public CPUStatus tick() {
+        /*
+         *  TODO: According to nesdev wiki
+         *  Emulator authors may wish to emulate the NTSC NES/Famicom CPU at
+         *  21441960 Hz ((341×262-0.5)×4×60) to ensure a synchronised/stable
+         *  60 frames per second
+         */
+
+
         // Reset values. Set to -1 to indicate it was not set
         op1 = -1;
         op2 = -1;
@@ -450,9 +458,9 @@ public class CPU {
         int op = bus.read(currentPC);
 
         // TODO delete me
-//        if (currentPC == 0xF225) {
-//            System.out.println("What up!");
-//        }
+        if (currentPC == 0xEE0E) {
+            System.out.println("What up!");
+        }
 
         /**
          * Retrieve the relavent opcode then:
@@ -487,6 +495,7 @@ public class CPU {
         status.SP = SP;
         status.cycle = cycles - currentCycles;
         status.cycleCount = cycles;
+        status.address = address;
 
         return status;
     }
