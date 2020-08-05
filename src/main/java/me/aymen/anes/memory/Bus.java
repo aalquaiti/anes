@@ -20,6 +20,7 @@ public class Bus {
     // Contains all memory a bus can have
     // Some of the memory locations will not be used due to mirroring
     // The decision not to have several variables is to ease access
+    // TODO: Change memory into different parts (RAM, ROM... etc) to reflect a real bus
     public final int[] memory;
 
     public Bus() {
@@ -61,7 +62,7 @@ public class Bus {
     private int mapIndex(int index) {
         if(index < 0 || index > SIZE - 1) {
             logger.error("Error accessing memory at index {}", index);
-            throw new IllegalArgumentException("Accessing beyond memory boundary at");
+            throw new IllegalArgumentException(String.format("Accessing beyond memory boundary at $%02X", index));
         }
 
         // Cartridge Space (0x4020 to 0xFFFF)
