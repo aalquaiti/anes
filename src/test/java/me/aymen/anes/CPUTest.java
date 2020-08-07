@@ -1,7 +1,11 @@
 package me.aymen.anes;
 
-import me.aymen.anes.memory.Bus;
+import me.aymen.anes.cpu.CPU;
+import me.aymen.anes.io.Bus;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test CPU instructions. Immediate addressing memory is assumed if direct memory is needed

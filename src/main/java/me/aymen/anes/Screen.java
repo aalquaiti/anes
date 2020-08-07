@@ -11,7 +11,7 @@ public class Screen extends JPanel {
     /**
      * NES width resolution
      */
-    public final int WIDTH = 320;
+    public final int WIDTH = 256;
 
     /**
      * NES height resolution

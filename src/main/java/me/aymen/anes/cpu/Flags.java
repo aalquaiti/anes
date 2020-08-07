@@ -1,4 +1,4 @@
-package me.aymen.anes;
+package me.aymen.anes.cpu;
 
 /**
  * Represents CPU Processor Status

@@ -1,9 +1,12 @@
 package me.aymen.anes;
 
 
+import me.aymen.anes.cpu.AddressMode;
+import me.aymen.anes.cpu.CPUStatus;
+
 import java.util.function.Function;
 
-import static me.aymen.anes.AddressMode.*;
+import static me.aymen.anes.cpu.AddressMode.*;
 
 /**
  * Helper Class that takes an opcode and return a String representing

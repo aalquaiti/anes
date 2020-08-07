@@ -1,13 +1,9 @@
 package me.aymen.anes;
 
-import me.aymen.anes.memory.Bus;
-import me.aymen.anes.memory.Cartridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
 import java.awt.*;
-import java.util.Random;
 
 /**
  * Hello world!
@@ -44,9 +40,9 @@ public class App
 //            i++;
 //        }
 
-        int screenWidth = 640;
-        int screenHeight = 480;
-        int logicalWidth = 320;
+        int screenWidth = 1024;
+        int screenHeight = 960;
+        int logicalWidth = 256;
         int logicalHeight = 240;
         Screen s = new Screen(screenWidth, screenHeight);
 

@@ -1,4 +1,4 @@
-package me.aymen.anes;
+package me.aymen.anes.cpu;
 
 /**
  * Reference to difference address mode methods used.

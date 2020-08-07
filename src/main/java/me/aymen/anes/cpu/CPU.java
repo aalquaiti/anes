@@ -1,11 +1,11 @@
-package me.aymen.anes;
+package me.aymen.anes.cpu;
 
-import me.aymen.anes.memory.Bus;
+import me.aymen.anes.io.Bus;
 import me.aymen.anes.util.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static me.aymen.anes.AddressMode.*;
+import static me.aymen.anes.cpu.AddressMode.*;
 
 public class CPU {
     private static Logger logger = LoggerFactory.getLogger(CPU.class);
@@ -443,6 +443,15 @@ public class CPU {
          *  60 frames per second
          */
 
+        // TODO: add interruption handling as follows:
+        //  1. IRQ points to address location $FFFE and $FFFF if (I) is false
+        //  2. NMI points to address location $FFFA and $FFFB
+        //  3. Reset interrupt (happens when system starts or when reset
+        //  pressed) points to $FFFC and $FFFD
+        //  Priority: Reset followed by NMI followed by IRQ
+        //  Latency: 7 cycles
+
+
 
         // Reset values. Set to -1 to indicate it was not set
         op1 = -1;
@@ -455,7 +464,7 @@ public class CPU {
         int currentCycles = cycles;
 
         // Retrieve the operation mnemonic
-        int op = bus.read(currentPC);
+        int op = bus.cpuRead(currentPC);
 
         // TODO delete me
         if (currentPC == 0xEE0E) {
@@ -527,9 +536,51 @@ public class CPU {
 
         // Must point to reset vector which is at index
         // 0xFFFD (High) and 0xFFFC (low)
-        PC = bus.read(0xFFFC) | (bus.read(0xFFFD) << 8);
+        PC = bus.cpuRead(0xFFFC) | (bus.cpuRead(0xFFFD) << 8);
         // TODO check that cycles is increased due to a fetch operation
         cycles+=7;
+    }
+
+    /**
+     * Interrupt Request
+     */
+    public void irq() {
+        // TODO add a unit test
+        // Check Interruption is disabled (I Flag)
+        if (P.I)
+            return;
+
+        // Write PC to stack
+        ph(PC >> 8);
+        ph(PC & 0xFF);
+
+        // Write Processor Status to stack after updating the stack:
+        P.B = false;
+        P.I = true;  // i.e. ignore any future interrupts
+        ph(P.getStatus());
+
+        // Set PC to interrupt vector address and increment cycles
+        PC = bus.cpuRead(0xFFFE) | (bus.cpuRead(0xFFFF) << 8);
+        cycles+=7;
+    }
+
+    /**
+     * Non Maskable Interrupt. Used by PPU to signal V-Blank
+     */
+    public void nmi() {
+        // TODO add a unit test
+        // Write PC to stack
+        ph(PC >> 8);
+        ph(PC & 0xFF);
+
+        // Write Processor Status to stack after updating the stack:
+        P.B = false;
+        P.I = true;  // i.e. ignore any future interrupts
+        ph(P.getStatus());
+
+        // Set PC to address 0xFFFA and 0xFFFB
+        PC = bus.cpuRead(0xFFFA) | (bus.cpuRead(0xFFFB) << 8);
+        cycles+=8;
     }
 
     public int getA() {
@@ -651,7 +702,7 @@ public class CPU {
      * Arithmetic Shift left. Shifts memory content one bit left
      */
     public void aslM() {
-        bus.write(asl(), address);
+        bus.cpuWrite(asl(), address);
     }
 
     /**
@@ -708,8 +759,11 @@ public class CPU {
         ph(PC >> 8);
         ph(PC & 0xFF);
         ph(P.getStatus());
+
         // Set PC to interrupt vector address
-        PC = bus.read(0xFFFE) | (bus.read(0xFFFF) << 8);
+        // TODO: Check if this step needs to be performed at the beginning for
+        //  a tick where the processor checks and acknowledge interrupts (if Interrupt Disable flag is false)
+        PC = bus.cpuRead(0xFFFE) | (bus.cpuRead(0xFFFF) << 8);
     }
 
     /**
@@ -906,7 +960,7 @@ public class CPU {
      * Logical Shift Right Memory Content
      */
     public void lsrM() {
-        bus.write(lsr(), address);
+        bus.cpuWrite(lsr(), address);
     }
 
     /**
@@ -974,7 +1028,7 @@ public class CPU {
      * Rotate Memory content Left through Carry
      */
     public void rolM() {
-        bus.write(rol(), address);
+        bus.cpuWrite(rol(), address);
     }
 
     /**
@@ -988,7 +1042,7 @@ public class CPU {
      * Rotate Memory Content Right through Carry
      */
     public void rorM() {
-        bus.write(ror(), address);
+        bus.cpuWrite(ror(), address);
     }
 
     /**
@@ -1132,7 +1186,7 @@ public class CPU {
     public void _dcp() {
         dec();
         // Reread value stored after it change it
-        value = bus.read(address);
+        value = bus.cpuRead(address);
         cmp();
     }
 
@@ -1142,7 +1196,7 @@ public class CPU {
     public void _isb() {
         inc();
         // Reread value stored after it change it
-        value = bus.read(address);
+        value = bus.cpuRead(address);
         sbc();
     }
 
@@ -1176,7 +1230,7 @@ public class CPU {
      */
     public void _sax() {
         // No flags are affected
-        bus.write(A & X, address);
+        bus.cpuWrite(A & X, address);
     }
 
     /**
@@ -1211,7 +1265,7 @@ public class CPU {
      */
     private void imm() {
         address = incPC();
-        op1 = bus.read(address);
+        op1 = bus.cpuRead(address);
         value = op1;
     }
 
@@ -1221,19 +1275,19 @@ public class CPU {
      */
     private void zpg() {
         // Read first byte only after instruction for memory address
-        op1 = bus.read(incPC());
+        op1 = bus.cpuRead(incPC());
         address = op1;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
      * Zero page indexed with X
      */
     private void zpgx() {
-        op1 = bus.read(incPC());
+        op1 = bus.cpuRead(incPC());
         // Wrap around if needed
         address = (op1 + X) & 0xFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1241,17 +1295,17 @@ public class CPU {
      * Only used by LDX and STX
      */
     private void zpgy() {
-        op1 = bus.read(incPC());
+        op1 = bus.cpuRead(incPC());
         // Wrap around if needed
         address = (op1 + Y) & 0xFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
      * Relative
      */
     private void rel() {
-        op1 = bus.read(incPC());
+        op1 = bus.cpuRead(incPC());
         // Read as byte as its a signed value
         value = (byte) op1;
     }
@@ -1261,10 +1315,10 @@ public class CPU {
      */
     private void abs() {
         // Read the first and second byte after instruction for memory address
-        op1 = bus.read(incPC());
-        op2 = bus.read(incPC());
+        op1 = bus.cpuRead(incPC());
+        op2 = bus.cpuRead(incPC());
         address = buildAddress(op1, op2);
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1278,7 +1332,7 @@ public class CPU {
             cycles++;
 
         address = (X + address) & 0xFFFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1288,7 +1342,7 @@ public class CPU {
     private void absxPlus() {
         abs();
         address = (X + address) & 0xFFFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1302,7 +1356,7 @@ public class CPU {
             cycles++;
 
         address = (Y + address) & 0xFFFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1312,7 +1366,7 @@ public class CPU {
     private void absyPlus() {
         abs();
         address = (Y + address) & 0xFFFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1320,13 +1374,13 @@ public class CPU {
      * Only used by JMP
      */
     private void ind() {
-        op1 = bus.read(incPC());
-        op2 = bus.read(incPC());
+        op1 = bus.cpuRead(incPC());
+        op2 = bus.cpuRead(incPC());
         int indirect = buildAddress(op1, op2);
-        address = bus.read(indirect);
+        address = bus.cpuRead(indirect);
         // Fixes first operand (low byte) cross page boundary
         indirect = buildAddress((op1 + 1) & 0xFF, op2);
-        address += bus.read(indirect) << 8;
+        address += bus.cpuRead(indirect) << 8;
     }
 
     /**
@@ -1338,11 +1392,11 @@ public class CPU {
         // op1 + X (wrapped within zero page)
         // The low and next byte (also wrapped within zero page) 's value
         // is the 16 bit address, which is then used to retrieve value
-        op1 = bus.read(incPC());
+        op1 = bus.cpuRead(incPC());
         int low = (op1 + X) & 0xFF;
         int high = (low + 1) & 0xFF;
-        address = buildAddress(bus.read(low), bus.read(high));
-        value = bus.read(address);
+        address = buildAddress(bus.cpuRead(low), bus.cpuRead(high));
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1354,9 +1408,9 @@ public class CPU {
         // address, then Y is added to it.
         // The result is the least significant byte of the indirect address.
         // The addition's carry (if any) is added to the next zero page address
-        op1 = bus.read(incPC());
-        int low = bus.read(op1);
-        int high = bus.read((op1 + 1) & 0xFF);
+        op1 = bus.cpuRead(incPC());
+        int low = bus.cpuRead(op1);
+        int high = bus.cpuRead((op1 + 1) & 0xFF);
         int index = buildAddress(low, high);
 
         // Increment cycle if cross page happens
@@ -1364,7 +1418,7 @@ public class CPU {
             cycles++;
 
         address = (index + Y) & 0xFFFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     /**
@@ -1373,12 +1427,12 @@ public class CPU {
      * cross page happens
      */
     private void indyPlus() {
-        op1 = bus.read(incPC());
-        int low = bus.read(op1);
-        int high = bus.read((op1 + 1) & 0xFF);
+        op1 = bus.cpuRead(incPC());
+        int low = bus.cpuRead(op1);
+        int high = bus.cpuRead((op1 + 1) & 0xFF);
         int index = buildAddress(low, high);
         address = (index + Y) & 0xFFFF;
-        value = bus.read(address);
+        value = bus.cpuRead(address);
     }
 
     //endregion
@@ -1391,7 +1445,7 @@ public class CPU {
      */
     public void addMemory(int cnt) {
         int result = (value + cnt) & 0xFF;
-        bus.write(result, address);
+        bus.cpuWrite(result, address);
         P.setZNFlags(result);
     }
 
@@ -1474,7 +1528,7 @@ public class CPU {
      * @param val Value that needs to be pushed into stack
      */
     private void ph(int val) {
-        bus.write(val, decSP());
+        bus.cpuWrite(val, decSP());
     }
 
     /**
@@ -1482,7 +1536,7 @@ public class CPU {
      * @return
      */
     public int pl() {
-        return bus.read(incSP());
+        return bus.cpuRead(incSP());
     }
 
     /**
@@ -1515,7 +1569,7 @@ public class CPU {
      * @param val
      */
     private void st(int val) {
-        bus.write(val, address);
+        bus.cpuWrite(val, address);
     }
 
     /**
