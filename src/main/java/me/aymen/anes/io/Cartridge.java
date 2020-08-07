@@ -1,4 +1,4 @@
-package me.aymen.anes.memory;
+package me.aymen.anes.io;
 
 import me.aymen.anes.exception.InvalidROMException;
 import org.slf4j.Logger;
@@ -9,21 +9,24 @@ import java.io.IOException;
 ;
 
 /**
- * Representes NES cartridge inserted into the system.
- * Works in conjunction with Bus Object, where SRAM and ROM memory is stored
+ * Represents NES cartridge inserted into the system.
  */
 public class Cartridge {
 
+    /**
+     * ROM bank size
+     */
+    public static final int BANK_SIZE = 0x4000;
+
     //region Flags
 
-    // Flags 6
+    // Flag 6
     private boolean hasTrainer;
 
     //endregion
 
     private final static Logger logger =
             LoggerFactory.getLogger(Cartridge.class);
-    private final Bus bus;
     private final int HEADER_SIZE = 16;
     private byte header[];
     private byte trainer[];
@@ -33,16 +36,18 @@ public class Cartridge {
     private int chrBank;
     private int mapperType;
 
-    public Cartridge(Bus bus) {
-        this.bus = bus;
+    protected int[] memory;
+
+    public Cartridge() {
         header = new byte[HEADER_SIZE];
     }
 
     /**
-     * Read iNES and NES 2.0 ROM files
+     * Reads iNES and NES 2.0 ROM files
      * @param file path to file
      */
     public void load(String file) {
+        // TODO add documentation of file structure
         try(FileInputStream in = new FileInputStream(file)) {
             logger.info("Reading file '{}'", file);
             int read = in.read(header);
@@ -104,32 +109,56 @@ public class Cartridge {
             throw new RuntimeException(e);
         }
 
-        loadToBus();
+        loadMemory();
     }
 
     /**
-     * Loads Cartridge ROM memory to bus
+     * Loads Cartridge to ROM memory
      */
-    public void loadToBus() {
+    private void loadMemory() {
 
         if(hasTrainer) {
-            for(int i =0 ; i < trainer.length; i++)
-                bus.memory[0x7000 + i] = (int) trainer[i];
+            for(int i =0 ; i < trainer.length; i++) {
+                //bus.memory[0x7000 + i] = (int) trainer[i];
+                // TODO implement SRAM area
+            }
         }
+        memory = new int[BANK_SIZE * prgBank];
 
         // Load ROM Data
         for(int i = 0; i < prg.length; i++)
             // Read it as unsigned byte
-            bus.memory[0x8000 + i] = prg[i] & 0xFF;
+            memory[i] = prg[i] & 0xFF;
 
-        // If prg blocks are only 1, copy memory as well to 0xC000
-        // This will cover all memory space from (0x8000 to 0xFFFF)
-        if(prgBank == 1)
-            for(int i = 0; i < prg.length; i++)
-                bus.memory[0xC000 + i] = prg[i] & 0xFF;
+//        // If prg blocks are only 1, copy memory as well to 0xC000
+//        // This will cover all memory space from (0x8000 to 0xFFFF)
+//        if(prgBank == 1)
+//            for(int i = 0; i < prg.length; i++)
+//                bus.memory[0xC000 + i] = prg[i] & 0xFF;
 
         // TODO a better implementation would be to mirror values instead
     }
+
+    /**
+     * Reads value from ROM. Notice this methods should be called from a bus,
+     * which will mirror values correctly. Check romIndex for details.
+     * @param addresss
+     * @return
+     */
+    public int read(int addresss) {
+
+        // TODO implement access to other areas of PRG-ROM
+        if (prgBank == 1)
+            // If there is only one prg rom bank
+            addresss %= 0x4000;
+
+        return memory[addresss];
+    }
+
+    // TODO add romAccess method that define what part of PRG-ROM is being accessed:
+    // 0x4020 - 0x5FFF: Expansion ROM
+    // 0x6000 - 0x7FFF: SRAM
+    // 0x8000 - 0xFFFF: Lower and Upper Bank
 
     public boolean hasTrainer() {
         return hasTrainer;
