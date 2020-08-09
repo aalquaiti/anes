@@ -1,4 +1,4 @@
-package me.aymen.anes;
+package me.aymen.anes.ppu;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,8 +27,6 @@ public class Screen extends JPanel {
      *
      * @param screenWidth The displayed Window Width
      * @param screenHeight The displayed Window Height
-     * @param logicalWidth The logical resolution of
-     * @param logicalHeight
      */
     public Screen(int screenWidth, int screenHeight) {
         this.widthScale = screenWidth / WIDTH;

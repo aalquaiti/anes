@@ -1,4 +1,4 @@
-package me.aymen.anes;
+package me.aymen.anes.util;
 
 
 import me.aymen.anes.cpu.AddressMode;
@@ -56,7 +56,7 @@ public class Deassembler {
      * Analyse an instruction and return an assembly language representation.
      * Example:
      * C000  6D FF 00  ADC $00FF
-     * A:## X:## Y:## P:## SP:## CYC:## COUNT:####
+     * A:## X:## Y:## P:## SP:## CYC:##
      * @param s cpu status
      * @return String representation
      */
@@ -73,8 +73,7 @@ public class Deassembler {
      * @return
      */
     public static String showStatus(CPUStatus s) {
-        return String.format("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d " +
-                "SUM: %d", s.A, s.X, s.Y, s.P.getStatus(), s.SP, s.cycle,
-                s.cycleCount);
+        return String.format("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d",
+                s.A, s.X, s.Y, s.P.getStatus(), s.SP, s.clockCounter);
     }
 }

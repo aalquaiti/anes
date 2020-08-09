@@ -150,4 +150,11 @@ public class Flags {
         V = (value & 0x40) == 0x40;
         N = (value & 0x80) == 0x80;
     }
+
+    public Flags clone() {
+        Flags P = new Flags();
+        P.setStatus(this.getStatus());
+
+        return P;
+    }
 }

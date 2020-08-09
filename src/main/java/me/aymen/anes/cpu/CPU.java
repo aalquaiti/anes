@@ -12,7 +12,9 @@ public class CPU {
 
     // CPU Components
     private Bus bus;
-    private int cycles;
+    private int clockCounter; // Total number of cycles
+    private int cycles; // Number of cycles remaining to simulate op execution
+    private CPUStatus status; // Status before execution of the instruction
 
     // Registers
     private int A;          // Accumulator
@@ -22,7 +24,7 @@ public class CPU {
     private int SP;         // Stack Pointer
     private Flags P;        // Process Status
 
-    // Others
+    // Instruction execution
     private int op1;        // First Operand
     private int op2;        // Second Operand
     // Used by executing instruction if needed
@@ -32,6 +34,7 @@ public class CPU {
     // The value at memory address
     // populated by addressing mode if needed
     private int value;
+    private boolean complete;
 
     // All 6502 OPCodes. Unsupported unofficial instructions are
     // set to null, which will lead to crashing
@@ -43,7 +46,6 @@ public class CPU {
 
     public CPU(Bus bus) {
         this.bus = bus;
-        reset();
 
         // populates addressModes
         addressMode[IMPL] =  () -> {};
@@ -326,7 +328,7 @@ public class CPU {
         opcodes[0xE7] = null;
         opcodes[0xE8] = new Inst("INX", 2, IMPL, this::inx);
         opcodes[0xE9] = new Inst("SBC", 2, IMM, this::sbc);
-        opcodes[0xEA] = new Inst("NOP", 2, IMPL, this::nop);
+        opcodes[0xEA] = new Inst("NOP", 2, IMPL, () -> {});
         opcodes[0xEB] = null;
         opcodes[0xEC] = new Inst("CPX", 4, ABS, this::cpx);
         opcodes[0xED] = new Inst("SBC", 4, ABS, this::sbc);
@@ -431,11 +433,23 @@ public class CPU {
     }
 
     /**
-     * Represents execution one opcode statement
-     * @return String representation of the operation performed in Assembly
-     * Code
+     * Executes one clock cycle for the cpu. Instructions have different cycle
+     * needs to be executed. The first call will execute the instruction, while
+     * the preceding calls will consume the cycles until it reaches zero.
+     * @return cpu status after execution, null if still consuming cylces
      */
-    public CPUStatus tick() {
+    public void clock() {
+
+        if (cycles > 0) {
+            cycles--;
+            complete = false;
+            return;
+        }
+
+        // Flag execution as complete, indicating the instruction has executed
+        // This helps to clock the cpu until an instruction is executed
+        complete = true;
+
         /*
          *  TODO: According to nesdev wiki
          *  Emulator authors may wish to emulate the NTSC NES/Famicom CPU at
@@ -451,8 +465,6 @@ public class CPU {
         //  Priority: Reset followed by NMI followed by IRQ
         //  Latency: 7 cycles
 
-
-
         // Reset values. Set to -1 to indicate it was not set
         op1 = -1;
         op2 = -1;
@@ -461,7 +473,6 @@ public class CPU {
 
         // Read the current PC then increment it
         int currentPC = incPC();
-        int currentCycles = cycles;
 
         // Retrieve the operation mnemonic
         int op = bus.cpuRead(currentPC);
@@ -472,7 +483,7 @@ public class CPU {
         }
 
         /**
-         * Retrieve the relavent opcode then:
+         * Retrieve the relevant opcode then:
          * 1. Invoke the address mode then update the following variables
          * if need be:
          *      a. op1
@@ -487,11 +498,9 @@ public class CPU {
             logger.error(
                     String.format("Detected unsupported opcode: $%02X", op));
         addressMode[opcode.mode].process();
-        opcode.operation.process();
-        cycles += opcode.cycles;
 
-        // Retrieve status after each tick
-        CPUStatus status = new CPUStatus();
+        // Update CPU status before execution
+        status = new CPUStatus();
         status.PC = currentPC;
         status.op = op;
         status.op1 = op1;
@@ -500,22 +509,30 @@ public class CPU {
         status.A = A;
         status.X = X;
         status.Y = Y;
-        status.P = P;
+        status.P = P.clone();
         status.SP = SP;
-        status.cycle = cycles - currentCycles;
-        status.cycleCount = cycles;
         status.address = address;
+        status.cycles = opcode.cycles;
+        status.clockCounter = clockCounter;
 
-        return status;
+        // Execute instruction
+        opcode.operation.process();
+        clockCounter += opcode.cycles;
+        cycles = opcode.cycles;
+
+
     }
 
     /**
-     * Executes ticks indefinitely
+     * Determines if cpu completed executing an instruction
+     * @return
      */
-    public void start() {
-        while(true) {
-            tick();
-        }
+    public boolean isComplete() {
+        return complete;
+    }
+
+    public CPUStatus getStatus() {
+        return status;
     }
 
     /**
@@ -523,6 +540,7 @@ public class CPU {
      */
     public void reset() {
         cycles = 0;
+        clockCounter = 0;
 
         // TODO there is difference between power-up and reset status
         // Change it according to
@@ -538,7 +556,11 @@ public class CPU {
         // 0xFFFD (High) and 0xFFFC (low)
         PC = bus.cpuRead(0xFFFC) | (bus.cpuRead(0xFFFD) << 8);
         // TODO check that cycles is increased due to a fetch operation
-        cycles+=7;
+        cycles +=7;
+        clockCounter += 7;
+
+        // Update CPU Status
+        status = null;
     }
 
     /**
@@ -561,7 +583,8 @@ public class CPU {
 
         // Set PC to interrupt vector address and increment cycles
         PC = bus.cpuRead(0xFFFE) | (bus.cpuRead(0xFFFF) << 8);
-        cycles+=7;
+        cycles +=7;
+        clockCounter += 7;
     }
 
     /**
@@ -580,7 +603,8 @@ public class CPU {
 
         // Set PC to address 0xFFFA and 0xFFFB
         PC = bus.cpuRead(0xFFFA) | (bus.cpuRead(0xFFFB) << 8);
-        cycles+=8;
+        cycles +=8;
+        clockCounter += 8;
     }
 
     public int getA() {
@@ -666,8 +690,8 @@ public class CPU {
         return P;
     }
 
-    public int getCycles() {
-        return cycles;
+    public int getClockCounter() {
+        return clockCounter;
     }
 
     //region opcodes methods
@@ -961,13 +985,6 @@ public class CPU {
      */
     public void lsrM() {
         bus.cpuWrite(lsr(), address);
-    }
-
-    /**
-     * No Operation.
-     */
-    public void nop() {
-        // I'm walkin' here
     }
 
     /**
@@ -1328,8 +1345,10 @@ public class CPU {
     private void absx() {
         abs();
 
-        if ((address & 0xFF00) != ((address + X) & 0xFF00))
+        if ((address & 0xFF00) != ((address + X) & 0xFF00)) {
             cycles++;
+            clockCounter++;
+        }
 
         address = (X + address) & 0xFFFF;
         value = bus.cpuRead(address);
@@ -1352,8 +1371,10 @@ public class CPU {
     private void absy() {
         abs();
 
-        if ((address & 0xFF00) != ((address + Y) & 0xFF00))
+        if ((address & 0xFF00) != ((address + Y) & 0xFF00)) {
             cycles++;
+            clockCounter++;
+        }
 
         address = (Y + address) & 0xFFFF;
         value = bus.cpuRead(address);
@@ -1414,8 +1435,10 @@ public class CPU {
         int index = buildAddress(low, high);
 
         // Increment cycle if cross page happens
-        if( low != ((low + Y) & 0xFF))
+        if( low != ((low + Y) & 0xFF)) {
             cycles++;
+            clockCounter++;
+        }
 
         address = (index + Y) & 0xFFFF;
         value = bus.cpuRead(address);
@@ -1490,12 +1513,15 @@ public class CPU {
         // Reaching here meaning branch will happen
         // so increment cycles
         cycles++;
+        clockCounter++;
 
         int oldPC = PC;
         PC += value;
         // Increment cycles if cross page occurs
-        if( (oldPC & 0xFF00) != (PC & 0xFF00))
-            cycles+=1;
+        if( (oldPC & 0xFF00) != (PC & 0xFF00)) {
+            cycles++;
+            clockCounter +=1;
+        }
     }
 
     /**

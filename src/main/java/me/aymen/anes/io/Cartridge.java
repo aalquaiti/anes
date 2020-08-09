@@ -30,13 +30,11 @@ public class Cartridge {
     private final int HEADER_SIZE = 16;
     private byte header[];
     private byte trainer[];
-    private byte prg[];
+    private byte prgMemory[];
     private int prgBank;
-    private byte chr[];
+    private byte chrMemory[];
     private int chrBank;
     private int mapperType;
-
-    protected int[] memory;
 
     public Cartridge() {
         header = new byte[HEADER_SIZE];
@@ -83,76 +81,71 @@ public class Cartridge {
             }
 
             // Fourth header decides the size how many blocks PRG ROM memory
-            // got. Each block is 16384 bytes
+            // got. Each block is 0x4000 (16384) bytes
             prgBank = header[4];
-            prg = new byte[16384 * prgBank];
-            read = in.read(prg);
-            if(read < prg.length)
+            prgMemory = new byte[0x4000  * prgBank];
+            read = in.read(prgMemory);
+            if(read < prgMemory.length)
                 throw new InvalidROMException("PRG ROM memory failed to be " +
                         "read. File might be corrupted");
 
-            logger.info("PRG ROM size: {} bytes", prg.length);
+            logger.info("PRG ROM size: {} bytes", prgMemory.length);
 
             // Fifth header decides the size of CHR ROM (if any). Each block
-            // is 8192 bytes in size
+            // is 0x2000 (8192) bytes in size
             chrBank = header[5];
-            chr = new byte[8192 * chrBank];
-            read = in.read(chr);
-            if(read < chr.length)
+            chrMemory = new byte[0x2000 * chrBank];
+            read = in.read(chrMemory);
+            if(read < chrMemory.length)
                 throw new InvalidROMException("CHR ROM memory failed to be " +
                         "read. File might be corrupted");
 
-            logger.info("CHR ROM size: {} bytes", chr.length);
+            logger.info("CHR ROM size: {} bytes", chrMemory.length);
 
             // TODO Implement the rest of INES and NES 2.0 memory
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        loadMemory();
+        // TODO implement SRAM area
+//        if(hasTrainer) {
+//            for(int i =0 ; i < trainer.length; i++) {
+//                //bus.memory[0x7000 + i] = (int) trainer[i];
+//
+//            }
+//        }
     }
 
     /**
-     * Loads Cartridge to ROM memory
-     */
-    private void loadMemory() {
-
-        if(hasTrainer) {
-            for(int i =0 ; i < trainer.length; i++) {
-                //bus.memory[0x7000 + i] = (int) trainer[i];
-                // TODO implement SRAM area
-            }
-        }
-        memory = new int[BANK_SIZE * prgBank];
-
-        // Load ROM Data
-        for(int i = 0; i < prg.length; i++)
-            // Read it as unsigned byte
-            memory[i] = prg[i] & 0xFF;
-
-//        // If prg blocks are only 1, copy memory as well to 0xC000
-//        // This will cover all memory space from (0x8000 to 0xFFFF)
-//        if(prgBank == 1)
-//            for(int i = 0; i < prg.length; i++)
-//                bus.memory[0xC000 + i] = prg[i] & 0xFF;
-
-        // TODO a better implementation would be to mirror values instead
-    }
-
-    /**
-     * Reads value from ROM. Notice this methods should be called from a bus,
+     * Reads value from PRG Bank. Notice this methods should be called from a bus,
      * which will mirror values correctly. Check romIndex for details.
-     * @param addresss
+     * @param address
      * @return
      */
-    public int read(int addresss) {
+    public int readPRG(int address) {
 
         // TODO implement access to other areas of PRG-ROM
         if (prgBank == 1)
             // If there is only one prg rom bank
-            addresss %= 0x4000;
+            address %= 0x4000;
 
-        return memory[addresss];
+        // Return as unsigned byte
+        return prgMemory[address] & 0xFF ;
+    }
+
+    /**
+     * Reads value from CHR Bank. Notice this methods should be called from a bus,
+     * which will mirror values correctly.
+     * @param address
+     * @return
+     */
+    public int readCHR(int address) {
+
+        // TODO implement access to other areas of PRG-ROM
+
+        // Return as unsigned byte
+        return chrMemory[address] & 0xFF
+                ;
     }
 
     // TODO add romAccess method that define what part of PRG-ROM is being accessed:
@@ -169,11 +162,11 @@ public class Cartridge {
     }
 
     public byte[] getPRG() {
-        return prg;
+        return prgMemory;
     }
 
     public byte[] getCHR() {
-        return chr;
+        return chrMemory;
     }
 
     public int getMapperType() {
