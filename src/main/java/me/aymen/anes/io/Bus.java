@@ -22,23 +22,20 @@ public class Bus {
     public final CPU cpu;
     public final PPU ppu;
     public final RAM ram;
-    public final VRAM vram;
     public final Cartridge rom;
-    public final PPURegisters ppuReg;
+    public final PPURegister ppuIO;
 
     public Bus() {
-
         ram = new RAM();
-        vram = new VRAM();
         rom = new Cartridge();
-        ppuReg = new PPURegisters();
-
         cpu = new CPU(this);
         ppu = new PPU(this);
+        ppuIO = new PPURegister(this);
     }
 
     /**
-     * Retrieve value accessible by cpu according to address. See cpuAccess for details.
+     * Retrieve value from a device according to address. See cpuAccess for
+     * details.
      * @param address
      * @return
      */
@@ -50,11 +47,16 @@ public class Bus {
                 return ram.memory[pair.second];
 
             case PPU_IO:
-                return ppuReg.memory[pair.second];
+                return ppuIO.read(pair.second);
 
             case APU_IO:
                 // TODO implement
-                throw new IllegalArgumentException(String.format("%2X", pair.second));
+                throw new IllegalArgumentException(String.format(
+                        "%2X APU Register not supported yet", pair.second));
+
+            case OAM_DMA:
+                // TODO implement
+                throw new IllegalArgumentException("OAM_DMA not supported yet");
 
             case PGR_ROM:
                 // Internally, the implementation of ROM starts at 0x0000
@@ -63,7 +65,8 @@ public class Bus {
 
             default:
                 // Should never happen
-                throw new IllegalArgumentException("Device at address not supported");
+                throw new IllegalArgumentException("Unknown device at address" +
+                        " not supported");
         }
     }
 
@@ -77,15 +80,18 @@ public class Bus {
 
         switch (pair.first) {
             case RAM:
-                ram.memory[pair.second ] = value & 0xFF;
+                ram.memory[pair.second] = value & 0xFF;
                 break;
             case PPU_IO:
-                // TODO implement
-                throw new IllegalArgumentException();
+                ppuIO.write(value & 0xFF, pair.second);
 
             case APU_IO:
                 // TODO implement
                 throw new IllegalArgumentException();
+
+            case OAM_DMA:
+                // TODO implement
+                throw new IllegalArgumentException("OAM_DMA not supported yet");
 
             case PGR_ROM:
                 // TODO implement SRAM (Save RAM)
@@ -93,7 +99,8 @@ public class Bus {
 
             default:
                 // Should never happen
-                throw new IllegalArgumentException("Device at address not supported");
+                throw new IllegalArgumentException("Unknown device at address" +
+                        " not supported");
         }
     }
 
@@ -102,9 +109,10 @@ public class Bus {
      * if mirroring is expected.
      * 0x0000 - 0x07FF: RAM
      * 0x8000 - 0x1FFF: Mirroring RAM
-     * 0x2000 - 0x2007: PPU IO Registers
+     * 0x2000 - 0x2007: PPU IO Registers (additionally 0x4014)
      * 0x2008 - 0x3FFF: Mirroring PPU IO Registers
-     * 0x4000 - 0x401F: APU IO Registers
+     * 0x4000 - 0x401F: APU IO Registers (Except for 0x4014, which belongs
+     *                  to PPU)
      * 0x4020 - 0xFFFF: Program ROM
      * @param address Address to access
      * @return Enum of device name and address
@@ -117,6 +125,12 @@ public class Bus {
         if (address >= 0x4020) {
             // TODO check if any mirroring should be done
             pair.first = IO.PGR_ROM;
+            pair.second = address;
+        }
+
+        // OAM_DMA at 0x4014 (PPU Register used for Data Management access)
+        else if (address == 0x4014) {
+            pair.first = IO.OAM_DMA;
             pair.second = address;
         }
 
@@ -146,7 +160,8 @@ public class Bus {
     }
 
     /**
-     * Retrieve value accessible by ppu according to address. See ppuAccess for details.
+     * Retrieve value from a device according to address. See ppuAccess for
+     * details.
      * @param address
      * @return
      */
@@ -157,7 +172,7 @@ public class Bus {
             case CHR_ROM:
                 return rom.readPRG(pair.second);
             case VRAM:
-                return vram.memory[pair.second];
+                return ppu.vram[pair.second];
             case PLTE:
                 return ppu.palette[pair.second];
             default:
@@ -166,9 +181,26 @@ public class Bus {
         }
     }
 
-    public void ppuWrite() {
-        // TODO implement
-        throw new IllegalArgumentException();
+    /**
+     * Writes value to device according to address. See ppuAccess for details.
+     * @param value
+     * @param address
+     */
+    public void ppuWrite(int value, int address) {
+        Pair<IO, Integer> pair = ppuAccess(address);
+
+        switch (pair.first) {
+            case CHR_ROM:
+                // TODO check if CHR ROM can be treated as RAM
+                throw new IllegalArgumentException("Cannot write to CHR ROM");
+            case VRAM:
+                ppu.vram[pair.second] = value;
+            case PLTE:
+                ppu.palette[pair.second] = value;
+            default:
+                // Should never happen
+                throw new IllegalArgumentException("Device at address not supported");
+        }
     }
 
     /**
@@ -182,7 +214,7 @@ public class Bus {
      * @param address Address to access
      * @return Enum of device name and address
      */
-    private Pair<IO, Integer> ppuAccess(int address) {
+    public Pair<IO, Integer> ppuAccess(int address) {
         Pair<IO, Integer> pair = new Pair<>();
         validBoundary(address);
 
@@ -220,7 +252,9 @@ public class Bus {
     private void validBoundary(int value) {
         if(value < 0 || value > MAX_ADDR) {
             logger.error("Error accessing memory at address {}", value);
-            throw new IllegalArgumentException(String.format("Accessing beyond memory boundary at $%02X", value));
+            throw new IllegalArgumentException(
+                    String.format("Accessing beyond memory boundary at " +
+                            "$%02X", value));
         }
     }
 }

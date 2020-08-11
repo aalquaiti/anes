@@ -356,7 +356,7 @@ public class CPU {
         // Unofficial opcodes
         opcodes[0x03] = new Inst("*SLO", 8, INDX, this::_slo);
         opcodes[0x04] = new Inst("*NOP", 3, ZPG, ()-> {});
-        opcodes[0x07] = new Inst("*SLO", 4, ZPG, this::_slo);
+        opcodes[0x07] = new Inst("*SLO", 5, ZPG, this::_slo);
         opcodes[0x0C] = new Inst("*NOP", 4, ABS, ()-> {});
         opcodes[0x0F] = new Inst("*SLO", 6, ABS, this::_slo);
         opcodes[0x13] = new Inst("*SLO", 8, INDY_O, this::_slo);
@@ -439,9 +439,9 @@ public class CPU {
      * @return cpu status after execution, null if still consuming cylces
      */
     public void clock() {
+        cycles--;
 
         if (cycles > 0) {
-            cycles--;
             complete = false;
             return;
         }
@@ -477,11 +477,6 @@ public class CPU {
         // Retrieve the operation mnemonic
         int op = bus.cpuRead(currentPC);
 
-        // TODO delete me
-        if (currentPC == 0xEE0E) {
-            System.out.println("What up!");
-        }
-
         /**
          * Retrieve the relevant opcode then:
          * 1. Invoke the address mode then update the following variables
@@ -494,13 +489,23 @@ public class CPU {
          *  3. Update cycles count
          */
         Inst opcode = opcodes[op];
-        if (opcode == null)
+        if (opcode == null) {
             logger.error(
                     String.format("Detected unsupported opcode: $%02X", op));
-        addressMode[opcode.mode].process();
+
+            // TODO remove crash
+            System.exit(-1);
+        }
 
         // Update CPU status before execution
+        // Cycle is read before processing address mode to preserve it
+        // address mode is processed to retrieve address and op1 and op2 values
         status = new CPUStatus();
+        status.cycles = opcode.cycles;
+        status.clockCounter = clockCounter;
+
+        addressMode[opcode.mode].process();
+
         status.PC = currentPC;
         status.op = op;
         status.op1 = op1;
@@ -512,15 +517,11 @@ public class CPU {
         status.P = P.clone();
         status.SP = SP;
         status.address = address;
-        status.cycles = opcode.cycles;
-        status.clockCounter = clockCounter;
+        status.value = address == -1 ? 0 : bus.cpuRead(address);
 
         // Execute instruction
         opcode.operation.process();
-        clockCounter += opcode.cycles;
-        cycles = opcode.cycles;
-
-
+        addCycles(opcode.cycles);
     }
 
     /**
@@ -556,8 +557,7 @@ public class CPU {
         // 0xFFFD (High) and 0xFFFC (low)
         PC = bus.cpuRead(0xFFFC) | (bus.cpuRead(0xFFFD) << 8);
         // TODO check that cycles is increased due to a fetch operation
-        cycles +=7;
-        clockCounter += 7;
+        addCycles(7);
 
         // Update CPU Status
         status = null;
@@ -583,8 +583,7 @@ public class CPU {
 
         // Set PC to interrupt vector address and increment cycles
         PC = bus.cpuRead(0xFFFE) | (bus.cpuRead(0xFFFF) << 8);
-        cycles +=7;
-        clockCounter += 7;
+        addCycles(7);
     }
 
     /**
@@ -603,8 +602,7 @@ public class CPU {
 
         // Set PC to address 0xFFFA and 0xFFFB
         PC = bus.cpuRead(0xFFFA) | (bus.cpuRead(0xFFFB) << 8);
-        cycles +=8;
-        clockCounter += 8;
+        addCycles(8);
     }
 
     public int getA() {
@@ -1232,6 +1230,7 @@ public class CPU {
     public void _rla() {
         value = rol();
         and();
+        bus.cpuWrite(value, address);
     }
 
     /**
@@ -1240,6 +1239,7 @@ public class CPU {
     public void _rra() {
         value = ror();
         adc();
+        bus.cpuWrite(value, address);
     }
 
     /**
@@ -1256,6 +1256,7 @@ public class CPU {
     public void _slo() {
         value = asl();
         ora();
+        bus.cpuWrite(value, address);
     }
 
     /**
@@ -1264,6 +1265,7 @@ public class CPU {
     public void _sre() {
         value = lsr();
         eor();
+        bus.cpuWrite(value, address);
     }
 
     //end region
@@ -1323,7 +1325,7 @@ public class CPU {
      */
     private void rel() {
         op1 = bus.cpuRead(incPC());
-        // Read as byte as its a signed value
+        // Read as byte since its a signed value
         value = (byte) op1;
     }
 
@@ -1346,8 +1348,7 @@ public class CPU {
         abs();
 
         if ((address & 0xFF00) != ((address + X) & 0xFF00)) {
-            cycles++;
-            clockCounter++;
+            addCycles(1);
         }
 
         address = (X + address) & 0xFFFF;
@@ -1372,8 +1373,7 @@ public class CPU {
         abs();
 
         if ((address & 0xFF00) != ((address + Y) & 0xFF00)) {
-            cycles++;
-            clockCounter++;
+            addCycles(1);
         }
 
         address = (Y + address) & 0xFFFF;
@@ -1436,8 +1436,7 @@ public class CPU {
 
         // Increment cycle if cross page happens
         if( low != ((low + Y) & 0xFF)) {
-            cycles++;
-            clockCounter++;
+            addCycles(1);
         }
 
         address = (index + Y) & 0xFFFF;
@@ -1512,15 +1511,13 @@ public class CPU {
 
         // Reaching here meaning branch will happen
         // so increment cycles
-        cycles++;
-        clockCounter++;
+        addCycles(1);
 
         int oldPC = PC;
         PC += value;
         // Increment cycles if cross page occurs
         if( (oldPC & 0xFF00) != (PC & 0xFF00)) {
-            cycles++;
-            clockCounter +=1;
+            addCycles(1);
         }
     }
 
@@ -1606,6 +1603,16 @@ public class CPU {
      */
     private static int buildAddress(int low, int high) {
         return (high << 8) | low;
+    }
+
+    /**
+     * Add cycles to be executed to clockCounter and cpu cycles.
+     * Cycles helps to simulate clock ticks advancement
+     * @param cycles
+     */
+    private void addCycles(int cycles) {
+        this.cycles += cycles;
+        clockCounter += cycles;
     }
 
     // endregion

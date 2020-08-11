@@ -5,7 +5,7 @@ package me.aymen.anes.io;
  */
 public class RAM {
     public static int SIZE = 0x800;
-    protected final int[] memory;
+    public final int[] memory;
 
     public RAM() {
         memory = new int[SIZE];

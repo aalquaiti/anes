@@ -4,7 +4,7 @@ import me.aymen.anes.cpu.CPU;
 import me.aymen.anes.io.Bus;
 import me.aymen.anes.ppu.PPU;
 import me.aymen.anes.ppu.Screen;
-import me.aymen.anes.util.Deassembler;
+import me.aymen.anes.util.DeAssembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +14,8 @@ public class Nes {
     private CPU cpu;
     private PPU ppu;
     private Screen screen;
+    private DeAssembler deAssmb;
+    private int clockCounter;
     private int ticks;
 
     public Nes() {
@@ -21,6 +23,7 @@ public class Nes {
         cpu = bus.cpu;
         ppu = bus.ppu;
         screen = new Screen(1024, 960);
+        deAssmb = new DeAssembler(bus);
         bus.ppu.connect(screen);
 
         // TODO REMOVE these settings. Only used for testing nestest.nes
@@ -36,6 +39,7 @@ public class Nes {
         // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
         // TODO move this function to be part of bus clock as this helps
         //  to manage bus related functionality such as DMA
+
         ppu.clock();
         ppu.clock();
         ppu.clock();
@@ -43,23 +47,25 @@ public class Nes {
 
         if (cpu.isComplete()) {
             ticks++;
-            // TODO add ppu status
             String ppuStatus = String.format("PPU: %03d, %03d", ppu.scanLine,
                     ppu.cycle);
             String message = String.format("Tick: %05d %-50s%s", ticks,
-                    Deassembler .analyse(cpu.getStatus()),
-                    Deassembler.showStatus(cpu.getStatus()));
+                    deAssmb.analyse(cpu.getStatus()),
+                    deAssmb.showStatus(cpu.getStatus(), ppuStatus));
             System.out.println(message);
         }
 
+        // Draw frame when complete
         if (ppu.isComplete()) {
             screen.repaint();
         }
+
+        clockCounter++;
     }
 
     public void start() {
         int i = 0;
-        while (i < 100000) {
+        while (i < 26518) {
             try {
                 clock();
             } catch(Exception e){
@@ -67,5 +73,26 @@ public class Nes {
             }
             i++;
         }
+//        Color[] colors = {
+//                Color.BLACK,
+//                Color.RED,
+//                Color.GREEN,
+//                Color.BLUE
+//        };
+//
+//        for(int j = 0; j < 16; j++) {
+//            for (int i = 0; i < 16; i++) {
+//                int[][] tile = ppu.getTile(i + j * 16);
+//
+//                for (int y = 0; y < 8; y++) {
+//                    for (int x = 0; x < 8; x++) {
+//                        screen.setPixel(i * 8 + x, j * 8 + y, colors[tile[y][x]]);
+//                        System.out.println(String.format("Drawing at (%d, %d)", i * 8 + x, j  * 8 + y));
+//                    }
+//                }
+//            }
+//        }
+//        screen.repaint();
+
     }
 }
