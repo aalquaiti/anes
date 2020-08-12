@@ -51,12 +51,12 @@ public class Bus {
 
             case APU_IO:
                 // TODO implement
-                throw new IllegalArgumentException(String.format(
-                        "%2X APU Register not supported yet", pair.second));
+                logger.error("Reading APU Register not supported");
 
             case OAM_DMA:
                 // TODO implement
-                throw new IllegalArgumentException("OAM_DMA not supported yet");
+                logger.error("Reading OAM_DMA not supported");
+                return 0;
 
             case PGR_ROM:
                 // Internally, the implementation of ROM starts at 0x0000
@@ -65,8 +65,12 @@ public class Bus {
 
             default:
                 // Should never happen
-                throw new IllegalArgumentException("Unknown device at address" +
-                        " not supported");
+                logger.error(String.format("CPU Read for unknown device at " +
+                        "address $%04X not supported", pair.second));
+                System.exit(-1);
+
+                // This statement will never be reached
+                return 0;
         }
     }
 
@@ -84,23 +88,24 @@ public class Bus {
                 break;
             case PPU_IO:
                 ppuIO.write(value & 0xFF, pair.second);
-
+                break;
             case APU_IO:
                 // TODO implement
-                throw new IllegalArgumentException();
-
+                logger.error("Write to APU registers not supported");
+                break;
             case OAM_DMA:
                 // TODO implement
-                throw new IllegalArgumentException("OAM_DMA not supported yet");
-
+                logger.error("Write to OAM_DMA not supported");
+                break;
             case PGR_ROM:
                 // TODO implement SRAM (Save RAM)
-                throw new IllegalArgumentException();
-
+                logger.error("Write to PGR ROM not supported");
+                break;
             default:
                 // Should never happen
-                throw new IllegalArgumentException("Unknown device at address" +
-                        " not supported");
+                logger.error(String.format("CPU Write for unknown device at " +
+                        "address $%04X not supported", pair.second));
+                System.exit(-1);
         }
     }
 
@@ -170,14 +175,19 @@ public class Bus {
 
         switch (pair.first) {
             case CHR_ROM:
-                return rom.readPRG(pair.second);
+                return rom.readCHR(pair.second);
             case VRAM:
                 return ppu.vram[pair.second];
             case PLTE:
                 return ppu.palette[pair.second];
             default:
                 // Should never happen
-                throw new IllegalArgumentException("Device at address not supported");
+                logger.error(String.format("PPU Read for unknown device at " +
+                        "address $%04X not supported", pair.second));
+                System.exit(-1);
+
+                // This statement will never be reached
+                return 0;
         }
     }
 
@@ -192,14 +202,19 @@ public class Bus {
         switch (pair.first) {
             case CHR_ROM:
                 // TODO check if CHR ROM can be treated as RAM
-                throw new IllegalArgumentException("Cannot write to CHR ROM");
+                logger.error("Write to CHR ROM not supported");
+                break;
             case VRAM:
                 ppu.vram[pair.second] = value;
+                break;
             case PLTE:
                 ppu.palette[pair.second] = value;
+                break;
             default:
                 // Should never happen
-                throw new IllegalArgumentException("Device at address not supported");
+                logger.error(String.format("PPU Write for unknown device " +
+                        "address $%04X not supported", pair.second));
+                System.exit(-1);
         }
     }
 
@@ -251,10 +266,9 @@ public class Bus {
      */
     private void validBoundary(int value) {
         if(value < 0 || value > MAX_ADDR) {
-            logger.error("Error accessing memory at address {}", value);
-            throw new IllegalArgumentException(
-                    String.format("Accessing beyond memory boundary at " +
-                            "$%02X", value));
+            logger.error(String.format(
+                    "Cannot access memory at address $%04X", value));
+            System.exit(-1);
         }
     }
 }

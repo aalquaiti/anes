@@ -436,7 +436,6 @@ public class CPU {
      * Executes one clock cycle for the cpu. Instructions have different cycle
      * needs to be executed. The first call will execute the instruction, while
      * the preceding calls will consume the cycles until it reaches zero.
-     * @return cpu status after execution, null if still consuming cylces
      */
     public void clock() {
         cycles--;

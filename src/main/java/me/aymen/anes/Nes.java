@@ -2,27 +2,29 @@ package me.aymen.anes;
 
 import me.aymen.anes.cpu.CPU;
 import me.aymen.anes.io.Bus;
+import me.aymen.anes.ppu.ColorPalette;
 import me.aymen.anes.ppu.PPU;
 import me.aymen.anes.ppu.Screen;
 import me.aymen.anes.util.DeAssembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
+
 public class Nes {
     private static final Logger logger = LoggerFactory.getLogger(Nes.class);
-    private Bus bus;
-    private CPU cpu;
-    private PPU ppu;
-    private Screen screen;
-    private DeAssembler deAssmb;
+    private final CPU cpu;
+    private final PPU ppu;
+    private final Screen screen;
+    private final DeAssembler deAssmb;
     private int clockCounter;
     private int ticks;
 
     public Nes() {
-        bus = new Bus();
+        Bus bus = new Bus();
         cpu = bus.cpu;
         ppu = bus.ppu;
-        screen = new Screen(1024, 960);
+        screen = new Screen(768, 768);
         deAssmb = new DeAssembler(bus);
         bus.ppu.connect(screen);
 
@@ -64,35 +66,45 @@ public class Nes {
     }
 
     public void start() {
-        int i = 0;
-        while (i < 26518) {
-            try {
-                clock();
-            } catch(Exception e){
-                logger.error("Error while executing", e);
-            }
-            i++;
-        }
-//        Color[] colors = {
-//                Color.BLACK,
-//                Color.RED,
-//                Color.GREEN,
-//                Color.BLUE
-//        };
-//
+//        int i = 0;
+//        while (true) {
+//            try {
+//                clock();
+//            } catch(Exception e){
+//                logger.error("Error while executing", e);
+//            }
+//            i++;
+//        }
+        ColorPalette p = new ColorPalette();
+        Color[] colors = {
+                Color.WHITE,
+                p.color[0x08],
+                p.color[0x11],
+                p.color[0x23]
+        };
+
 //        for(int j = 0; j < 16; j++) {
 //            for (int i = 0; i < 16; i++) {
-//                int[][] tile = ppu.getTile(i + j * 16);
-//
+//                int index = i + j * 16;
+//                int[][] tile = ppu.getTile(index);
 //                for (int y = 0; y < 8; y++) {
 //                    for (int x = 0; x < 8; x++) {
-//                        screen.setPixel(i * 8 + x, j * 8 + y, colors[tile[y][x]]);
-//                        System.out.println(String.format("Drawing at (%d, %d)", i * 8 + x, j  * 8 + y));
+//                        int xPos = i * 8 + x;
+//                        int yPos = j * 8 + y;
+//                        screen.setPixel(xPos, yPos, colors[tile[x][y]]);
 //                    }
 //                }
 //            }
 //        }
-//        screen.repaint();
+
+        int[][] palette = ppu.getPalette(0);
+        for(int y=0; y< 128; y++) {
+            for(int x =0; x < 128; x ++) {
+                screen.setPixel(x, y, colors[palette[x][y]]);
+            }
+        }
+
+        screen.repaint();
 
     }
 }

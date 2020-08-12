@@ -71,22 +71,71 @@ public class PPU {
         return complete;
     }
 
+//    public int[][] getTile(int index) {
+//        int[][] tile = new int[8][8];
+//        // Each tile is 16 bytes in size
+//        int offset = index * 16;
+//
+//        // TODO complete
+//        for (int y = 0; y < 8; y ++) {
+//            int lsByte = bus.ppuRead(0x1000 + offset + y);
+//            int msByte = bus.ppuRead(0x1000 + offset + y + 8);
+//            for(int x = 0; x < 8; x++) {
+//                int lsBit = (lsByte >> 7 - x) & 0x1;
+//                int msBit = (msByte >> 7 - x) & 0x1;
+//                int value = lsBit + (msBit << 1);
+//                tile[y][x] = value;
+//            }
+//        }
+//
+//        return tile;
+//    }
+
     public int[][] getTile(int index) {
         int[][] tile = new int[8][8];
         // Each tile is 16 bytes in size
         int offset = index * 16;
 
         // TODO complete
-        for (int i = 0; i < 8; i ++) {
-            int lsByte = bus.ppuRead(0x1000 + offset + i);
-            int msByte = bus.ppuRead(0x1000 + offset + i + 8);
-            for(int j = 0; j < 8; j++) {
-                int lsBit = (lsByte >> 8 - i) & 0x1;
-                int msBit = (msByte >> 8 - i) & 0x1;
-                int value = lsBit + (msBit << 1);
-                tile[i][j] = value;
+        for (int y = 0; y < 8; y ++) {
+            int lsByte = bus.ppuRead(0x1000 + offset + y);
+            int msByte = bus.ppuRead(0x1000 + offset + y + 8);
+            for(int x = 0; x < 8; x++) {
+                int lsBit = (lsByte >> 7 - x) & 0x1;
+                int msBit = (msByte >> 7 - x) & 0x1;
+                int value = lsBit + msBit;
+                tile[x][y] = value;
             }
         }
+
+        return tile;
+    }
+
+    public int[][] getPalette(int index) {
+        int[][] tile = new int[128][128];
+
+        for (int yTile = 0; yTile < 16; yTile++) {
+            for(int xTile = 0; xTile < 16; xTile ++) {
+
+                int offset = (yTile * 256) + (xTile * 16);
+
+                for (int row = 0; row < 8; row ++) {
+                    int lsb = bus.ppuRead(index * 0x1000 + offset + row);
+                    int msb = bus.ppuRead(index * 0x1000 + offset + row + 8);
+                    for(int col = 0; col < 8; col++) {
+                        int lsBit = (lsb >> 7 - col) & 0x1;
+                        int msBit = (msb >> 7 - col) & 0x1;
+                        int value = lsBit + msBit;
+                        tile[xTile * 8 + col][yTile * 8 + row] = value;
+                    }
+                }
+            }
+
+        }
+
+
+        // TODO complete
+
 
         return tile;
     }

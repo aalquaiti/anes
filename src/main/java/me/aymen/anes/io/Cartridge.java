@@ -85,7 +85,7 @@ public class Cartridge {
             prgBank = header[4];
             prgMemory = new byte[0x4000  * prgBank];
             read = in.read(prgMemory);
-            if(read < prgMemory.length)
+            if(read != prgMemory.length)
                 throw new InvalidROMException("PRG ROM memory failed to be " +
                         "read. File might be corrupted");
 
@@ -96,7 +96,7 @@ public class Cartridge {
             chrBank = header[5];
             chrMemory = new byte[0x2000 * chrBank];
             read = in.read(chrMemory);
-            if(read < chrMemory.length)
+            if(read != chrMemory.length)
                 throw new InvalidROMException("CHR ROM memory failed to be " +
                         "read. File might be corrupted");
 
@@ -144,8 +144,7 @@ public class Cartridge {
         // TODO implement access to other areas of PRG-ROM
 
         // Return as unsigned byte
-        return chrMemory[address] & 0xFF
-                ;
+        return chrMemory[address] & 0xFF;
     }
 
     // TODO add romAccess method that define what part of PRG-ROM is being accessed:

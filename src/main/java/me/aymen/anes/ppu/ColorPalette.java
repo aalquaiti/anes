@@ -6,7 +6,7 @@ import java.awt.*;
  * Give access to all supported NES colors
  */
 public class ColorPalette {
-    Color[] color;
+    public Color[] color;
 
     public ColorPalette() {
         color = new Color[0x40];
