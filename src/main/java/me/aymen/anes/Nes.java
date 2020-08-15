@@ -13,6 +13,7 @@ import java.awt.*;
 
 public class Nes {
     private static final Logger logger = LoggerFactory.getLogger(Nes.class);
+    private final Bus bus;
     private final CPU cpu;
     private final PPU ppu;
     private final Screen screen;
@@ -21,7 +22,7 @@ public class Nes {
     private int ticks;
 
     public Nes() {
-        Bus bus = new Bus();
+        bus = new Bus();
         cpu = bus.cpu;
         ppu = bus.ppu;
         screen = new Screen(768, 768);
@@ -31,57 +32,49 @@ public class Nes {
         // TODO REMOVE these settings. Only used for testing nestest.nes
         bus.rom.load("test roms/nestest.nes");
         cpu.reset();
-        bus.cpu.setPC(0xC000);
-        bus.cpu.decSP();
-        cpu.decSP();
+
+        // TODO delete
+        ppu.patternTable = ppu.getPalette(0);
     }
 
     public void clock() {
-        // PPU clock runs three times faster than cpu due to Johnson counter
-        // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
-        // TODO move this function to be part of bus clock as this helps
-        //  to manage bus related functionality such as DMA
+        bus.clock();
 
-        ppu.clock();
-        ppu.clock();
-        ppu.clock();
-        cpu.clock();
-
-        if (cpu.isComplete()) {
-            ticks++;
-            String ppuStatus = String.format("PPU: %03d, %03d", ppu.scanLine,
-                    ppu.cycle);
-            String message = String.format("Tick: %05d %-50s%s", ticks,
-                    deAssmb.analyse(cpu.getStatus()),
-                    deAssmb.showStatus(cpu.getStatus(), ppuStatus));
-            System.out.println(message);
-        }
+//        if (cpu.isComplete()) {
+//            ticks++;
+//            String ppuStatus = String.format("PPU: %03d, %03d", ppu.scanLine,
+//                    ppu.cycle);
+//            String message = String.format("Tick: %05d %-50s%s", ticks,
+//                    deAssmb.analyse(cpu.getStatus()),
+//                    deAssmb.showStatus(cpu.getStatus(), ppuStatus));
+//            System.out.println(message);
+//        }
 
         // Draw frame when complete
         if (ppu.isComplete()) {
             screen.repaint();
         }
-
-        clockCounter++;
     }
 
     public void start() {
-//        int i = 0;
-//        while (true) {
-//            try {
-//                clock();
-//            } catch(Exception e){
-//                logger.error("Error while executing", e);
-//            }
-//            i++;
-//        }
-        ColorPalette p = new ColorPalette();
-        Color[] colors = {
-                Color.WHITE,
-                p.color[0x08],
-                p.color[0x11],
-                p.color[0x23]
-        };
+        int i = 0;
+        while ( i < 100000) {
+            try {
+                clock();
+            } catch(Exception e){
+                System.err.println(e.getCause());
+                e.printStackTrace();
+            }
+            i++;
+        }
+        //System.exit(0);
+//        ColorPalette p = new ColorPalette();
+//        Color[] colors = {
+//                Color.WHITE,
+//                p.color[0x08],
+//                p.color[0x11],
+//                p.color[0x23]
+//        };
 
 //        for(int j = 0; j < 16; j++) {
 //            for (int i = 0; i < 16; i++) {
@@ -97,14 +90,14 @@ public class Nes {
 //            }
 //        }
 
-        int[][] palette = ppu.getPalette(0);
-        for(int y=0; y< 128; y++) {
-            for(int x =0; x < 128; x ++) {
-                screen.setPixel(x, y, colors[palette[x][y]]);
-            }
-        }
-
-        screen.repaint();
+//        int[][] palette = ppu.getPalette(0);
+//        for(int y=0; y< 128; y++) {
+//            for(int x =0; x < 128; x ++) {
+//                screen.setPixel(x, y, colors[palette[x][y]]);
+//            }
+//        }
+//
+//        screen.repaint();
 
     }
 }

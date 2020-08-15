@@ -12,7 +12,7 @@ public class PPU {
 
     // PPU Components
     private Bus bus;
-    public final int vram[];
+    public final int[] vram;
     // Object Attribute Memory
     // Controlled by cpu through memory mappers:
     // OAMADDR $2003
@@ -24,13 +24,20 @@ public class PPU {
     // TODO consider having oam and palette memory as separated from PPU
     //   Although they are internal to PPU, they are accessed through bus which
     //   makes the architecture cleaner and easier to follow
-    public final int oam[];
-    public final int palette[];      // Palette Memory
+    public final int[] oam;
+    public final int[] palette;      // Palette Memory
     private Screen screen;
     private final ColorPalette colors;
     public int scanLine;
     public int cycle;
     private boolean complete;  // Indicates whole frame was drawn
+    // Indicates the ppu entered vblank and wants to trigger a non-maskable
+    // interrupt
+    private boolean nmi;
+
+    // TODO delete this
+    public int[][] patternTable;
+
 
     public PPU(Bus bus) {
         this.bus = bus;
@@ -48,13 +55,35 @@ public class PPU {
         this.screen = screen;
     }
 
+    public boolean isNmi() {
+        return nmi;
+    }
+
+    public void setNmi(boolean nmi) {
+        this.nmi = nmi;
+    }
+
     public void clock() {
+        if (scanLine == 0 && cycle == 1) {
+            setNmi(false);
+        }
+
         // Only write within visible boundary
         if (cycle < 256 && scanLine < 240)
-            screen.setPixel(cycle, scanLine, colors.get(
-                    (int)(Math.random()*0x40)));
+            if (scanLine < 128 && cycle < 128) {
+                int color = bus.ppuRead(0x3F00 + patternTable[cycle][scanLine]);
+                screen.setPixel(cycle, scanLine, colors.get(color));
+            }
 
         cycle++;
+
+        // Set Vertical Blank Period when reaching scan line 240
+        if (scanLine >= 240) {
+            bus.ppuIO.setVerticalBlank(true);
+            if (bus.ppuIO.nmiEnabled()) {
+                setNmi(true);
+            }
+        }
 
         if (cycle == 341) {
             cycle = 0;
@@ -70,26 +99,6 @@ public class PPU {
     public boolean isComplete() {
         return complete;
     }
-
-//    public int[][] getTile(int index) {
-//        int[][] tile = new int[8][8];
-//        // Each tile is 16 bytes in size
-//        int offset = index * 16;
-//
-//        // TODO complete
-//        for (int y = 0; y < 8; y ++) {
-//            int lsByte = bus.ppuRead(0x1000 + offset + y);
-//            int msByte = bus.ppuRead(0x1000 + offset + y + 8);
-//            for(int x = 0; x < 8; x++) {
-//                int lsBit = (lsByte >> 7 - x) & 0x1;
-//                int msBit = (msByte >> 7 - x) & 0x1;
-//                int value = lsBit + (msBit << 1);
-//                tile[y][x] = value;
-//            }
-//        }
-//
-//        return tile;
-//    }
 
     public int[][] getTile(int index) {
         int[][] tile = new int[8][8];
@@ -132,10 +141,6 @@ public class PPU {
             }
 
         }
-
-
-        // TODO complete
-
 
         return tile;
     }

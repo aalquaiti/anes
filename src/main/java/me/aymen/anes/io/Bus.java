@@ -94,8 +94,16 @@ public class Bus {
                 logger.error("Write to APU registers not supported");
                 break;
             case OAM_DMA:
-                // TODO implement
-                logger.error("Write to OAM_DMA not supported");
+                // CPU Address to start copying 0xFF bytes from to OAM memory
+                // is value written to Register * 0x100
+                int index = 0x100 * pair.second;
+                for(int i = 0; i < PPU.OAM_SIZE; i++) {
+                    ppu.oam[i] = cpuRead(index + i);
+                }
+                // It takes 513 or 514 cycles to copy data from cpu to ppu
+                // The +1 happens on an odd cpu cycle
+
+                cpu.addCycles(512);
                 break;
             case PGR_ROM:
                 // TODO implement SRAM (Save RAM)
@@ -179,7 +187,13 @@ public class Bus {
             case VRAM:
                 return ppu.vram[pair.second];
             case PLTE:
-                return ppu.palette[pair.second];
+                int value = ppu.palette[pair.second];
+                // Limit colors to grey column is greyscale flag is on
+                // TODO test greyscale mode
+                if (ppuIO.isGreyScaleMode()) {
+                    value &= 0x30;
+                }
+                return value;
             default:
                 // Should never happen
                 logger.error(String.format("PPU Read for unknown device at " +
@@ -224,7 +238,8 @@ public class Bus {
      * 0x0000 - 0x01FF: Pattern Tables (CHR-ROM)
      * 0x2000 - 0x2FFF: Name Tables (VRAM)
      * 0x3000 - 0x3EFF: Mirrors 0x2000 to 0x2EFF
-     * 0x3F00 - 0x3FFF: Palettes (PPU Internal Memory)
+     * 0x3F00 - 0x3F19: Palettes (PPU Internal Memory)
+     * 0x3F20 - 0x3FFF: Mirrors 0x3F00 to 0x3F19
      * 0x4000 - 0xFFFF: Mirrors 0x0000 to 0x3FFF
      * @param address Address to access
      * @return Enum of device name and address
@@ -238,8 +253,22 @@ public class Bus {
 
         // 0x3F00 - 0x3FFF: Palettes (PPU Internal Memory)
         if (address >= 0x3F00) {
+
+            // 0x3F20 - 0x3FFF: Mirrors 0x3F00 to 0x3F19
+            address %= 0x20;
+            // Color at 0x3F00 is the background which is mirrored every four
+            // bytes. This affects addresses 0x3F04, 0x3F08, 0x3F0C, 0x3F10,
+            // 0x3F14, 0x3F18, 0x3F1C
+            if (address == 0x04) address = 0x00;
+            if (address == 0x08) address = 0x00;
+            if (address == 0x0C) address = 0x00;
+            if (address == 0x10) address = 0x00;
+            if (address == 0x14) address = 0x00;
+            if (address == 0x18) address = 0x00;
+            if (address == 0x1C) address = 0x00;
+
             pair.first = IO.PLTE;
-            pair.second = address % 0x100;
+            pair.second = address;
         }
 
         // TODO implement access to other addresses
@@ -269,6 +298,27 @@ public class Bus {
             logger.error(String.format(
                     "Cannot access memory at address $%04X", value));
             System.exit(-1);
+        }
+    }
+
+    /**
+     * Executes one clock cycle (Hertz) for the system.
+     */
+    public void clock() {
+        // PPU clock runs three times faster than cpu due to Johnson counter
+        // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
+        // TODO move this function to be part of bus clock as this helps
+        //  to manage bus related functionality such as DMA
+        ppu.clock();
+        ppu.clock();
+        ppu.clock();
+
+
+        cpu.clock();
+
+        if (ppu.isNmi()) {
+            ppu.setNmi(false);
+            cpu.nmi();
         }
     }
 }

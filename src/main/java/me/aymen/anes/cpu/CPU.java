@@ -401,6 +401,7 @@ public class CPU {
         opcodes[0x80] = new Inst("*NOP", 2, IMM, ()-> {});
         opcodes[0x83] = new Inst("*SAX", 6, INDX, this::_sax);
         opcodes[0x87] = new Inst("*SAX", 3, ZPG, this::_sax);
+        opcodes[0x89] = new Inst("*NOP", 2, IMM, ()-> {});
         opcodes[0x8F] = new Inst("*SAX", 4, ABS, this::_sax);
         opcodes[0x97] = new Inst("*SAX", 4, ZPGY, this::_sax);
         opcodes[0xA3] = new Inst("*LAX", 6, INDX, this::_lax);
@@ -409,6 +410,7 @@ public class CPU {
         opcodes[0xB3] = new Inst("*LAX", 5, INDY_P, this::_lax);
         opcodes[0xB7] = new Inst("*LAX", 4, ZPGY, this::_lax);
         opcodes[0xBF] = new Inst("*LAX", 4, ABSY_P, this::_lax);
+        opcodes[0xC2] = new Inst("*NOP", 2, IMM, ()-> {});
         opcodes[0xC3] = new Inst("*DCP", 8, INDX, this::_dcp);
         opcodes[0xC7] = new Inst("*DCP", 5, ZPG, this::_dcp);
         opcodes[0xCF] = new Inst("*DCP", 6, ABS, this::_dcp);
@@ -493,7 +495,7 @@ public class CPU {
                     String.format("Detected unsupported opcode: $%02X", op));
 
             // TODO remove crash
-            System.exit(-1);
+//            System.exit(-1);
         }
 
         // Update CPU status before execution
@@ -548,7 +550,7 @@ public class CPU {
         A = 0;
         X = 0;
         Y = 0;
-        SP = 0xFF;
+        SP = 0xFD;
         P = new Flags();
         P.setStatus(0x24);
 
@@ -1609,7 +1611,7 @@ public class CPU {
      * Cycles helps to simulate clock ticks advancement
      * @param cycles
      */
-    private void addCycles(int cycles) {
+    public void addCycles(int cycles) {
         this.cycles += cycles;
         clockCounter += cycles;
     }
