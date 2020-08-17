@@ -35,6 +35,7 @@ public class Cartridge {
     private byte chrMemory[];
     private int chrBank;
     private int mapperType;
+    private int mirroring;
 
     public Cartridge() {
         header = new byte[HEADER_SIZE];
@@ -58,6 +59,7 @@ public class Cartridge {
             // Refer to wiki.nesdev.com/w/index.php/INES
 
             // Flags 6
+            mirroring = (header[6] & 0x1);
             hasTrainer = (header[6] & 0x8) == 0x8;
             mapperType = (byte) (header[6] >> 4);
 
@@ -178,5 +180,42 @@ public class Cartridge {
 
     public int getChrBank() {
         return chrBank;
+    }
+
+    // TODO implement Cartridge handling VRAM
+    public boolean handlesVRAM() {
+        return false;
+    }
+
+    public int map(int address) {
+        // TODO implement mappers and proper mirroring mechanism
+        // Horizontal
+        if (mirroring == 1) {
+            address %= 0x800;
+        }
+        // Vertical
+        else {
+            if (address < 0x800) {
+                address %= 0x400;
+            } else {
+                address = (address % 0x400) + 0x400;
+            }
+        }
+
+        return address;
+    }
+
+    public int readVRAM(int address) {
+        // TODO implement
+
+        logger.error("Reading VRAM through Cartridge is not implemented");
+        System.exit(-1);
+
+        // Not reachable
+        return 0;
+    }
+
+    public void writeVRAM(int value, int address) {
+        // TODO implement
     }
 }

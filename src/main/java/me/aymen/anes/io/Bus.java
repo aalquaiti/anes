@@ -22,15 +22,15 @@ public class Bus {
     public final CPU cpu;
     public final PPU ppu;
     public final RAM ram;
+    public final VRAM vram;
     public final Cartridge rom;
-    public final PPURegister ppuIO;
 
     public Bus() {
         ram = new RAM();
+        vram = new VRAM();
         rom = new Cartridge();
         cpu = new CPU(this);
         ppu = new PPU(this);
-        ppuIO = new PPURegister(this);
     }
 
     /**
@@ -47,7 +47,7 @@ public class Bus {
                 return ram.memory[pair.second];
 
             case PPU_IO:
-                return ppuIO.read(pair.second);
+                return ppu.read(pair.second);
 
             case APU_IO:
                 // TODO implement
@@ -87,7 +87,7 @@ public class Bus {
                 ram.memory[pair.second] = value & 0xFF;
                 break;
             case PPU_IO:
-                ppuIO.write(value & 0xFF, pair.second);
+                ppu.write(value & 0xFF, pair.second);
                 break;
             case APU_IO:
                 // TODO implement
@@ -185,12 +185,16 @@ public class Bus {
             case CHR_ROM:
                 return rom.readCHR(pair.second);
             case VRAM:
-                return ppu.vram[pair.second];
+                if (rom.handlesVRAM()) {
+                    return rom.readVRAM(pair.second);
+                }
+
+                return vram.memory[rom.map(pair.second)];
             case PLTE:
                 int value = ppu.palette[pair.second];
                 // Limit colors to grey column is greyscale flag is on
                 // TODO test greyscale mode
-                if (ppuIO.isGreyScaleMode()) {
+                if (ppu.isGreyScaleMode()) {
                     value &= 0x30;
                 }
                 return value;
@@ -219,7 +223,11 @@ public class Bus {
                 logger.error("Write to CHR ROM not supported");
                 break;
             case VRAM:
-                ppu.vram[pair.second] = value;
+                if (rom.handlesVRAM()) {
+                    rom.writeVRAM(value, pair.second);
+                } else {
+                    vram.memory[rom.map(pair.second)] = value;
+                }
                 break;
             case PLTE:
                 ppu.palette[pair.second] = value;
@@ -235,7 +243,7 @@ public class Bus {
     /**
      * Retrieve the right device to access by ppu with appropriate address
      * if mirroring is expected.
-     * 0x0000 - 0x01FF: Pattern Tables (CHR-ROM)
+     * 0x0000 - 0x1FFF: Pattern Tables (CHR-ROM)
      * 0x2000 - 0x2FFF: Name Tables (VRAM)
      * 0x3000 - 0x3EFF: Mirrors 0x2000 to 0x2EFF
      * 0x3F00 - 0x3F19: Palettes (PPU Internal Memory)
@@ -277,10 +285,17 @@ public class Bus {
             // TODO part of the vram memory is mirrored but can be remapped
             //  to RAM on cartridge according to
             //  https://wiki.nesdev.com/w/index.php/PPU_programmer_reference#Hardware_mapping
-            pair.second = address % 0x800;
+
+            // Address is mod with 0x1000 as there could be four name tables
+            // and attribute tables from 0x2000 to 0x3000
+            // Although internal PPU VRAM is 0x800 in size, hardware mapping
+            // through cartridge could extend this to access additional memory.
+            // This is why further cartridge mapping happens in ppuRead and
+            // ppuWrite methods
+            pair.second = address % 0x1000;
         }
 
-        // 0x0000 - 0x01FF: Pattern Tables
+        // 0x0000 - 0x1FFF: Pattern Tables
         else {
             pair.first = IO.CHR_ROM;
             pair.second = address;

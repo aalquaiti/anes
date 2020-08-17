@@ -33,22 +33,20 @@ public class Nes {
         bus.rom.load("test roms/nestest.nes");
         cpu.reset();
 
-        // TODO delete
-        ppu.patternTable = ppu.getPalette(0);
     }
 
     public void clock() {
         bus.clock();
 
-//        if (cpu.isComplete()) {
-//            ticks++;
-//            String ppuStatus = String.format("PPU: %03d, %03d", ppu.scanLine,
-//                    ppu.cycle);
-//            String message = String.format("Tick: %05d %-50s%s", ticks,
-//                    deAssmb.analyse(cpu.getStatus()),
-//                    deAssmb.showStatus(cpu.getStatus(), ppuStatus));
-//            System.out.println(message);
-//        }
+        if (cpu.isComplete()) {
+            ticks++;
+            String ppuStatus = String.format("PPU: %03d, %03d", ppu.scanLine,
+                    ppu.cycle);
+            String message = String.format("Tick: %05d %-50s%s", ticks,
+                    deAssmb.analyse(cpu.getStatus()),
+                    deAssmb.showStatus(cpu.getStatus(), ppuStatus));
+            System.out.println(message);
+        }
 
         // Draw frame when complete
         if (ppu.isComplete()) {
@@ -58,7 +56,7 @@ public class Nes {
 
     public void start() {
         int i = 0;
-        while ( i < 100000) {
+        while ( i < 90000) {
             try {
                 clock();
             } catch(Exception e){
