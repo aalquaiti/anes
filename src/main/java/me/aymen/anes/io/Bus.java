@@ -96,7 +96,7 @@ public class Bus {
             case OAM_DMA:
                 // CPU Address to start copying 0xFF bytes from to OAM memory
                 // is value written to Register * 0x100
-                int index = 0x100 * pair.second;
+                int index = 0x100 * value;
                 for(int i = 0; i < PPU.OAM_SIZE; i++) {
                     ppu.oam[i] = cpuRead(index + i);
                 }

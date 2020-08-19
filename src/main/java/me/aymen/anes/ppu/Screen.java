@@ -16,7 +16,7 @@ public class Screen extends JPanel {
     /**
      * NES height resolution
      */
-    public final int HEIGHT = 256;
+    public final int HEIGHT = 240;
 
     Color[][] pixels;
     int widthScale;
