@@ -190,7 +190,7 @@ public class Cartridge {
     public int map(int address) {
         // TODO implement mappers and proper mirroring mechanism
         // Horizontal
-        if (mirroring == 1) {
+        if (mirroring == 0) {
             address %= 0x800;
         }
         // Vertical

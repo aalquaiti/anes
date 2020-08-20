@@ -14,6 +14,14 @@ class PPUAddressTest {
     }
 
     @Test
+    void getValue() {
+        addr.setSecondHalf(0x2A);
+        addr.setFirstHalf(0x15);
+
+        assertEquals(0x2A15, addr.getValue());
+    }
+
+    @Test
     void setValue() {
         addr.setValue(0x5646);
 

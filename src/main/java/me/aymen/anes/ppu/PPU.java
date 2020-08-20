@@ -85,12 +85,12 @@ public class PPU {
 
     // Used to store the current address to write/read data to vram.
     // Consists of 15 bits
-    private final PPUAddress ppu_v;
+    public final PPUAddress ppu_v;
 
     // Used to store the address of the top left onscreen tile
     // Consists of 15 bits, and with ppu_address used for rendering and
     // scrolling
-    private final PPUAddress ppu_t;
+    public final PPUAddress ppu_t;
 
     // Used to indicate the current column of the tile being rendered
     // Consists of 3 bits
@@ -155,10 +155,19 @@ public class PPU {
         this.nmi = nmi;
     }
 
+//    /**
+//     * Read value of a register
+//     */
+//    public int read(int address) {
+//        return read(address, false);
+//    }
+
     /**
      * Read value of a register
+     * @param update whether to increment ppu_v when data is read
+     *               (when address is PPU_DATA)
      */
-    public int read(int address) {
+    public int read(int address, boolean update) {
         int value = 0;
 
         switch (address) {
@@ -209,7 +218,9 @@ public class PPU {
                 Pair<IO, Integer> pair = bus.ppuAccess(ppu_v.getValue());
 
                 // Reading from PPU_DATA lead to increment of ppu address
-                ppu_v.increment(getIncrementMode());
+                if (update) {
+                    ppu_v.increment(getIncrementMode());
+                }
 
                 // Check if palette address is accessed
                 if (pair.first == IO.PLTE) {
@@ -230,7 +241,7 @@ public class PPU {
      * Write value to a register. Depending on Register, this might lead to
      * writing value to other devices (e.g. vram)
      */
-    public void write(int value, int address) {
+    public void write(int value, int address, boolean update) {
         switch (address) {
             case PPU_CTRL:
                 reg[PPU_CTRL] = value;
@@ -320,7 +331,9 @@ public class PPU {
                 reg[PPU_DATA] = value;
 
                 // Writing to PPU_DATA lead to increment of ppu address
-                ppu_v.increment(getIncrementMode());
+                if(update) {
+                    ppu_v.increment(getIncrementMode());
+                }
                 break;
             default:
                 // Should never happen
@@ -569,9 +582,9 @@ public class PPU {
      * Only happens when rendering is enabled
      */
     public void incCoarseX() {
-        if (!renderEnabled()) {
-            return;
-        }
+//        if (!renderEnabled()) {
+//            return;
+//        }
 
         if (ppu_v.getCoarseX() == 31) {
             ppu_v.setCoarseX(0);
@@ -651,10 +664,10 @@ public class PPU {
      */
     public void clock() {
 
-        System.out.println(String.format("PPU: %03d, %03d  fineX: %02d  " +
-                        "CoarseX: %02d  CoarseY: %02d  fineY: %02d",
-                cycle, scanLine, fineX, ppu_v.getCoarseX(), ppu_v.getFineY(),
-                ppu_v.getCoarseY()));
+//        System.out.println(String.format("PPU: %03d, %03d  fineX: %02d  " +
+//                        "CoarseX: %02d  fineY: %02d  CoarseY: %02d",
+//                cycle, scanLine, shiftPos, ppu_v.getCoarseX(), ppu_v.getFineY(),
+//                ppu_v.getCoarseY()));
 
         // Scanline -1 to 239: Pre-render and visible scan lines
         // if rendering is enabled, draw pixel with each tick
@@ -703,11 +716,11 @@ public class PPU {
                 ppu_v.setCoarseX(ppu_t.getCoarseX());
             }
 
-            // Cycle 279 to 305
+            // Cycle 280 to 304
             // Each tick in pre-render scanline, copy all vertical position
             // bits from ppu_t to ppu_v
             // v: IHGF.ED CBA..... = t: IHGF.ED CBA.....
-            if (scanLine == -1 && cycle >= 29 && cycle <= 305) {
+            if (scanLine == -1 && cycle >= 280 && cycle <= 304) {
                 // Get Coarse Y value
                 ppu_v.setCoarseY(ppu_t.getCoarseY());
                 // Get the value of vertical name table
@@ -769,34 +782,39 @@ public class PPU {
     // TODO explain how register shifting is emulated by reading the position
     // depending on fine X value
     public void drawPixel() {
-        int bit = ( (cycle - 1) % 32) / 8;
+
         int first = 0;
-        int second = 0;
-        switch (bit) {
-            case 0:
-                first = 0;
-                second = 1;
-                break;
-            case 1:
-                first = 2;
-                second = 3;
-                break;
-            case 2:
-                first = 4;
-                second = 5;
-                break;
-            case 3:
-                first = 6;
-                second = 7;
+
+        // top
+        if ( (ppu_v.getCoarseY() % 4) < 2 ) {
+            // left
+            first = 0;
+            // right
+            first = 2;
         }
-        int paletteAddr =  currentAT[second] + currentAT[first];
+        // bottom
+        else {
+            // left
+            first = 4;
+            // right
+            first = 6;
+        }
+
+        int paletteAddr =  currentAT[first + 1] << 1 | currentAT[first];
 
         int lsByte = currentNT[shiftPos];
         int msByte = currentNT[shiftPos + 8];
 
         int pixel = (msByte << 1) + lsByte;
 
-        screen.setPixel(cycle - 1, scanLine, getPaletteColor(paletteAddr, pixel));
+//        screen.setPixel(cycle - 1, scanLine, getPaletteColor(paletteAddr, pixel));
+
+        // TODO DELETE SLEEP
+//        try {
+//            Thread.sleep(10);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         // Increment shift Registers
         incShift();
@@ -823,7 +841,7 @@ public class PPU {
      * cycles to fetch one byte. To initialise all registers, 8 cycles are
      * needed. For that, the second cycle is used to simulate the fetch as
      * follows:
-     * Cycle 2: Name Table byte. Used for fetch in cycle 6 and 8
+     * Cycle 2: Name Table byte. Used for fetch in cycle 6 and 0
      * Cycle 4: Attribute Table byte
      * Cycle 6: Low background tile byte.
      * Cycle 0: High background tile byte.
@@ -834,60 +852,53 @@ public class PPU {
      * cycles, which this function is emulating.
      */
     public void evaluateBGRegisters() {
-        int tileAddr;
 
         switch (cycle % 8) {
-            case 2:
-                // TODO explain
-                ntByte = 0x2000 + ppu_v.getFullAddress();
-                break;
-            case 4:
-                // TODO explain
-                atByte = getBaseNameTable() + 0x3C0
-                        + ( (ppu_v.getCoarseY() & 0x1C) << 1 )
-                        + ( (ppu_v.getCoarseX() & 0x1C) >> 2 );
-                break;
-            case 6:
-                tileAddr = bus.ppuRead(ntByte);
-                lowBGByte = bus.ppuRead(getBGPatternTableAddr() + tileAddr);
-                break;
-            case 0:
-                tileAddr = bus.ppuRead(ntByte);
-                highBGByte = bus.ppuRead(getBGPatternTableAddr() + tileAddr
-                        + 8);
-                // shift name table registers
-                currentNT = nextNT;
-                nextNT = new int[BG_NT_SIZE];
-                for(int i = 0; i < 8; i++) {
-                    nextNT[i] = (lowBGByte >> 7 - i) & 0x1;
-                    nextNT[i + 8] = (highBGByte >> 7 - i) & 0x1;
-                }
+        case 2:
+            // TODO explain
+            ntByte = bus.ppuRead(0x2000 + ppu_v.getFullAddress());
+            break;
+        case 4:
+            // TODO explain
+            atByte = getBaseNameTable() + 0x3C0
+                    + ( (ppu_v.getCoarseY() & 0x1C) << 1 )
+                    + ( (ppu_v.getCoarseX() & 0x1C) >> 2 );
+            break;
+        case 6:
+            // TODO explain
+            lowBGByte = bus.ppuRead(getBGPatternTableAddr() + ntByte * 16);
+            break;
+        case 0:
+            // TODO explain
+            // TODO explain
+            highBGByte = bus.ppuRead(getBGPatternTableAddr() + ntByte * 16 + 8);
+            // shift name table registers
+            currentNT = nextNT;
+            nextNT = new int[BG_NT_SIZE];
+            for(int i = 0; i < 8; i++) {
+                nextNT[i] = (lowBGByte >> 7 - i) & 0x1;
+                nextNT[i + 8] = (highBGByte >> 7 - i) & 0x1;
+            }
 
-                // Shift attribute table registers
-                // TODO explain how each bits are arranged differently from how
-                //   it is in attribute table. AT have bits reversed, while this
-                //   is rearranged
-                currentAT = nextAT;
-                nextAT = new int[BG_AT_SIZE];
-                int attrb = bus.ppuRead(atByte);
+            // Shift attribute table registers
+            // TODO explain how each bits are arranged differently from how
+            //   it is in attribute table. AT have bits reversed, while this
+            //   is rearranged
+            currentAT = nextAT;
+            nextAT = new int[BG_AT_SIZE];
+            int attrb = bus.ppuRead(atByte);
 
-                for(int i=0; i < 8; i++) {
-                    // TODO consider having two bits arranged together instead of
-                    //   handling it in rendering
-                    int bit = (attrb >> i) & 0x1;
-                    nextAT[i] = bit;
-                }
+            for(int i=0; i < 8; i++) {
+                // TODO consider having two bits arranged together instead of
+                //   handling it in rendering
+                int bit = (attrb >> i) & 0x1;
+                nextAT[i] = bit;
+            }
 
-                // Increment to retrieve the next tile
-                incCoarseX();
-                break;
+            // Increment to retrieve the next tile
+            incCoarseX();
+            break;
         }
-
-
-
-
-
-
     }
 
     public int[][] getTile(int col, int row) {

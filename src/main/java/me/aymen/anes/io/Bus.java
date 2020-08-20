@@ -36,10 +36,19 @@ public class Bus {
     /**
      * Retrieve value from a device according to address. See cpuAccess for
      * details.
-     * @param address
-     * @return
      */
     public int cpuRead(int address) {
+        return cpuRead(address, true);
+    }
+
+    /**
+     * Retrieve value from a device according to address. See cpuAccess for
+     * details.
+     * @param update Whether ppu_v address register will be updated when
+     *               reading. Happens when reading from address 0x2007
+     *
+     */
+    public int cpuRead(int address, boolean update) {
         Pair<IO, Integer> pair = cpuAccess(address);
 
         switch (pair.first) {
@@ -47,7 +56,7 @@ public class Bus {
                 return ram.memory[pair.second];
 
             case PPU_IO:
-                return ppu.read(pair.second);
+                return ppu.read(pair.second, update);
 
             case APU_IO:
                 // TODO implement
@@ -74,12 +83,16 @@ public class Bus {
         }
     }
 
+    public void cpuWrite(int value, int address) {
+        cpuWrite(value, address, true);
+    }
+
     /**
      * Writes value to device according to address. See cpuAccess for details.
      * @param value
      * @param address
      */
-    public void cpuWrite(int value, int address) {
+    public void cpuWrite(int value, int address, boolean update) {
         Pair<IO, Integer> pair = cpuAccess(address);
 
         switch (pair.first) {
@@ -87,7 +100,7 @@ public class Bus {
                 ram.memory[pair.second] = value & 0xFF;
                 break;
             case PPU_IO:
-                ppu.write(value & 0xFF, pair.second);
+                ppu.write(value & 0xFF, pair.second, update);
                 break;
             case APU_IO:
                 // TODO implement

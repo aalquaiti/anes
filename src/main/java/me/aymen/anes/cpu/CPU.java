@@ -518,7 +518,7 @@ public class CPU {
         status.P = P.clone();
         status.SP = SP;
         status.address = address;
-        status.value = address == -1 ? 0 : bus.cpuRead(address);
+        status.value = address == -1 ? 0 : bus.cpuRead(address, false);
 
         // Execute instruction
         opcode.operation.process();
