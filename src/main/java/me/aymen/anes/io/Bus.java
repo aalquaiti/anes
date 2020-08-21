@@ -38,7 +38,7 @@ public class Bus {
      * details.
      */
     public int cpuRead(int address) {
-        return cpuRead(address, true);
+        return cpuRead(address, false);
     }
 
     /**
@@ -84,7 +84,7 @@ public class Bus {
     }
 
     public void cpuWrite(int value, int address) {
-        cpuWrite(value, address, true);
+        cpuWrite(value, address, false);
     }
 
     /**

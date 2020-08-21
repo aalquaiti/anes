@@ -31,18 +31,15 @@ public class CPU {
     // populated by appropriate addressing mode
     // Basically equals to op1 | (op2 << 8)
     private int address;
-    // The value at memory address
-    // populated by addressing mode if needed
-    private int value;
+    // Indicates cpu finished all cycles for an instruction
     private boolean complete;
 
     // All 6502 OPCodes. Unsupported unofficial instructions are
     // set to null, which will lead to crashing
     private Inst[] opcodes = new Inst[256];
-
+    // Lambda function for all address modes
     private Function[] addressMode = new Function[AddressMode.SIZE];
 
-    // All Address modes
 
     public CPU(Bus bus) {
         this.bus = bus;
@@ -470,7 +467,6 @@ public class CPU {
         op1 = -1;
         op2 = -1;
         address = -1;
-        value = 0;
 
         // Read the current PC then increment it
         int currentPC = incPC();
@@ -495,7 +491,7 @@ public class CPU {
                     String.format("Detected unsupported opcode: $%02X", op));
 
             // TODO remove crash
-//            System.exit(-1);
+            System.exit(-1);
         }
 
         // Update CPU status before execution
@@ -556,7 +552,9 @@ public class CPU {
 
         // Must point to reset vector which is at index
         // 0xFFFD (High) and 0xFFFC (low)
+        // TODO Uncomment
         PC = bus.cpuRead(0xFFFC) | (bus.cpuRead(0xFFFD) << 8);
+
         // TODO check that cycles is increased due to a fetch operation
         addCycles(7);
 
@@ -699,6 +697,7 @@ public class CPU {
      * Add memory to accumulator with carry
      */
     public void adc() {
+        int value = bus.cpuRead(address, true);
         int result = A + value + (P.C ? 1 : 0);
         result = P.setCFlag(result);
         P.setVFlag(A, value, result);
@@ -710,6 +709,7 @@ public class CPU {
      * Logical And memory with accumulator
      */
     public void and() {
+        int value = bus.cpuRead(address, true);
         A = A & value;
         P.setZNFlags(A);
     }
@@ -718,14 +718,15 @@ public class CPU {
      * Arithmetic Shift left. Shifts accumulator one bit left
       */
     public void aslA() {
-        A = asl();
+        A = asl(A);
     }
 
     /**
      * Arithmetic Shift left. Shifts memory content one bit left
      */
     public void aslM() {
-        bus.cpuWrite(asl(), address);
+        int value = bus.cpuRead(address, true);
+        bus.cpuWrite(asl(value), address);
     }
 
     /**
@@ -748,6 +749,7 @@ public class CPU {
      * And accumulator with memory
      */
     public void bit() {
+        int value = bus.cpuRead(address, true);
         int result = A & value;
         P.setZFlag(result);
         P.setNFlag(value);
@@ -891,6 +893,7 @@ public class CPU {
      * Exclusive OR accumulator with memory
      */
     public void eor() {
+        int value = bus.cpuRead(address, true);
         A = (A ^ value) & 0xFF;
         P.setZNFlags(A);
     }
@@ -920,14 +923,8 @@ public class CPU {
      * Jump to absolute or indirect address
      */
     public void jmp() {
-//        // Low byte
-//        ph(PC & 0xFF);
-//        // High byte
-//        ph(PC >> 8);
-
         PC = address;
     }
-
 
     /**
      * Jump to Subroutine
@@ -950,7 +947,7 @@ public class CPU {
      * Load Accumulator from memory
      */
     public void lda() {
-        A = value;
+        A = bus.cpuRead(address, true);
         P.setZNFlags(A);
     }
 
@@ -958,7 +955,7 @@ public class CPU {
      * Load X Register from Memory
      */
     public void ldx() {
-        X = value;
+        X = bus.cpuRead(address, true);
         P.setZNFlags(X);
     }
 
@@ -967,7 +964,7 @@ public class CPU {
      * Load Y Register from memory
      */
     public void ldy() {
-        Y = value;
+        Y = bus.cpuRead(address, true);
         P.setZNFlags(Y);
     }
 
@@ -976,20 +973,22 @@ public class CPU {
      * Logical Shift Right Accumulator
      */
     public void lsrA() {
-        A = lsr();
+        A = lsr(A);
     }
 
     /**
      * Logical Shift Right Memory Content
      */
     public void lsrM() {
-        bus.cpuWrite(lsr(), address);
+        int value = bus.cpuRead(address, true);
+        bus.cpuWrite(lsr(value), address);
     }
 
     /**
      * Logically OR Memory content with Accumulator
      */
     public void ora() {
+        int value = bus.cpuRead(address, true);
         A = A | value;
         P.setZNFlags(A);
     }
@@ -1037,28 +1036,30 @@ public class CPU {
      * Rotate Accumulator Left through Carry
      */
     public void rolA() {
-        A = rol();
+        A = rol(A);
     }
 
     /**
      * Rotate Memory content Left through Carry
      */
     public void rolM() {
-        bus.cpuWrite(rol(), address);
+        int value = bus.cpuRead(address, true);
+        bus.cpuWrite(rol(value), address);
     }
 
     /**
      * Rotate Accumulator Right through Carry
      */
     public void rorA() {
-        A = ror();
+        A = ror(A);
     }
 
     /**
      * Rotate Memory Content Right through Carry
      */
     public void rorM() {
-        bus.cpuWrite(ror(), address);
+        int value = bus.cpuRead(address, true);
+        bus.cpuWrite(ror(value), address);
     }
 
     /**
@@ -1086,11 +1087,12 @@ public class CPU {
     }
 
     /**
-     * Subtract Memory content to Accumulator with Carry
+     * Subtract Memory content to Accumulator with Carry.
+     * Same as ADC. The only difference is value is treated as complement
+     * value. Code repeated to avoid stack call
      */
     public void sbc() {
-        // Same as ADC. The only difference is value is treated as
-        // complement value. Code repeated to avoid stack call
+        int value = bus.cpuRead(address, true);
         value = 255 -  value;
         int result = A + value + (P.C ? 1 : 0);
 
@@ -1200,9 +1202,9 @@ public class CPU {
      * Performs DEC followed by CMP
      */
     public void _dcp() {
+        // TODO check if performing these two commands as separate might
+        //   affect ppu_v when reading at 0x2007
         dec();
-        // Reread value stored after it change it
-        value = bus.cpuRead(address);
         cmp();
     }
 
@@ -1211,8 +1213,6 @@ public class CPU {
      */
     public void _isb() {
         inc();
-        // Reread value stored after it change it
-        value = bus.cpuRead(address);
         sbc();
     }
 
@@ -1220,27 +1220,30 @@ public class CPU {
      * Load Accumulator and X Register from Memory
      */
     public void _lax() {
+        int value = bus.cpuRead(address, true);
         A = value;
         X = value;
         P.setZNFlags(value);
     }
 
     /**
-     * Performs ROL followed by AND on the result
+     * Performs ROL on content of memory location followed by AND on the result
      */
     public void _rla() {
-        value = rol();
+        // TODO check if performing these two commands as separate might
+        //   affect ppu_v when reading at 0x2007
+        rolM();
         and();
-        bus.cpuWrite(value, address);
     }
 
     /**
-     * Performs ROR followed by ADC on the result
+     * Performs ROR on content of memory location followed by ADC on the result
      */
     public void _rra() {
-        value = ror();
+        // TODO check if performing these two commands as separate might
+        //   affect ppu_v when reading at 0x2007
+        rorM();
         adc();
-        bus.cpuWrite(value, address);
     }
 
     /**
@@ -1252,24 +1255,26 @@ public class CPU {
     }
 
     /**
-     * Performs ASL followed by ORA on the result
+     * Performs ASL on content of memory location followed by ORA on the result
      */
     public void _slo() {
-        value = asl();
+        // TODO check if performing these two commands as separate might
+        //   affect ppu_v when reading at 0x2007
+        aslM();
         ora();
-        bus.cpuWrite(value, address);
     }
 
     /**
-     * Performs LSR followed by EOR on the result
+     * Performs LSR on content of memory location followed by EOR on the result
      */
     public void _sre() {
-        value = lsr();
+        // TODO check if performing these two commands as separate might
+        //   affect ppu_v when reading at 0x2007
+        lsrM();
         eor();
-        bus.cpuWrite(value, address);
     }
 
-    //end region
+    //endregion
 
     //region  Address Modes
 
@@ -1277,7 +1282,8 @@ public class CPU {
      * Accumulator
      */
     private void acc() {
-        value = A;
+        // Do nothing. No address is fetched as
+        // (A) register is available to access for instructions
     }
 
     /**
@@ -1286,7 +1292,6 @@ public class CPU {
     private void imm() {
         address = incPC();
         op1 = bus.cpuRead(address);
-        value = op1;
     }
 
     /**
@@ -1297,7 +1302,6 @@ public class CPU {
         // Read first byte only after instruction for memory address
         op1 = bus.cpuRead(incPC());
         address = op1;
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1307,7 +1311,6 @@ public class CPU {
         op1 = bus.cpuRead(incPC());
         // Wrap around if needed
         address = (op1 + X) & 0xFF;
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1318,16 +1321,14 @@ public class CPU {
         op1 = bus.cpuRead(incPC());
         // Wrap around if needed
         address = (op1 + Y) & 0xFF;
-        value = bus.cpuRead(address);
     }
 
     /**
      * Relative
      */
     private void rel() {
-        op1 = bus.cpuRead(incPC());
-        // Read as byte since its a signed value
-        value = (byte) op1;
+        address = incPC();
+        op1 = bus.cpuRead(address);
     }
 
     /**
@@ -1338,7 +1339,6 @@ public class CPU {
         op1 = bus.cpuRead(incPC());
         op2 = bus.cpuRead(incPC());
         address = buildAddress(op1, op2);
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1353,7 +1353,6 @@ public class CPU {
         }
 
         address = (X + address) & 0xFFFF;
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1363,7 +1362,6 @@ public class CPU {
     private void absxPlus() {
         abs();
         address = (X + address) & 0xFFFF;
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1378,7 +1376,6 @@ public class CPU {
         }
 
         address = (Y + address) & 0xFFFF;
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1388,7 +1385,6 @@ public class CPU {
     private void absyPlus() {
         abs();
         address = (Y + address) & 0xFFFF;
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1418,7 +1414,6 @@ public class CPU {
         int low = (op1 + X) & 0xFF;
         int high = (low + 1) & 0xFF;
         address = buildAddress(bus.cpuRead(low), bus.cpuRead(high));
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1441,7 +1436,6 @@ public class CPU {
         }
 
         address = (index + Y) & 0xFFFF;
-        value = bus.cpuRead(address);
     }
 
     /**
@@ -1455,7 +1449,6 @@ public class CPU {
         int high = bus.cpuRead((op1 + 1) & 0xFF);
         int index = buildAddress(low, high);
         address = (index + Y) & 0xFFFF;
-        value = bus.cpuRead(address);
     }
 
     //endregion
@@ -1467,6 +1460,7 @@ public class CPU {
      * @param cnt  Value content
      */
     public void addMemory(int cnt) {
+        int value = bus.cpuRead(address, true);
         int result = (value + cnt) & 0xFF;
         bus.cpuWrite(result, address);
         P.setZNFlags(result);
@@ -1494,7 +1488,7 @@ public class CPU {
      * Arithmetic Shift left. Shift value one bit left
      * @return value shifted
      */
-    private int asl() {
+    private int asl(int value) {
         value = value << 1;
         value =  P.setCFlag(value);
         P.setZNFlags(value);
@@ -1515,6 +1509,8 @@ public class CPU {
         addCycles(1);
 
         int oldPC = PC;
+        // Read as byte since its a signed value
+        int value = (byte) bus.cpuRead(address, true);
         PC += value;
         // Increment cycles if cross page occurs
         if( (oldPC & 0xFF00) != (PC & 0xFF00)) {
@@ -1527,6 +1523,7 @@ public class CPU {
      * @param cmp Value to compare
      */
     private void compare(int cmp) {
+        int value = bus.cpuRead(address, true);
         int result = cmp - value;
         P.C = cmp >= value;
         P.setZFlag(result);
@@ -1537,7 +1534,7 @@ public class CPU {
      * Logical Shift Right of Accumulator or Memory
      * @return
      */
-    public int lsr() {
+    public int lsr(int value) {
         int lowBit = value & 0x1;
         value = value >> 1;
         P.C = lowBit == 0x1;
@@ -1566,7 +1563,7 @@ public class CPU {
     /**
      * Rotate Accumulator or Memory content Left through Carry
      */
-    private int rol() {
+    private int rol(int value) {
         value = (value << 1) | (P.C ? 1 : 0);
         P.C = (value & 0x100) == 0x100;
         value = value & 0xFF;
@@ -1579,7 +1576,7 @@ public class CPU {
      * Rotate Accumulator or Memory content Right through Carry
      * @return
      */
-    public int ror() {
+    public int ror(int value) {
         int lowBit = value & 0x01;
         value = (P.C ? 0x80 : 0) | (value >> 1);
         P.C = (lowBit & 0x01) == 0x01;
@@ -1593,7 +1590,7 @@ public class CPU {
      * @param val
      */
     private void st(int val) {
-        bus.cpuWrite(val, address);
+        bus.cpuWrite(val, address, true);
     }
 
     /**

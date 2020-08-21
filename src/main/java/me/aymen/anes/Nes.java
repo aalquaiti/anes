@@ -30,9 +30,8 @@ public class Nes {
         bus.ppu.connect(screen);
 
         // TODO REMOVE these settings. Only used for testing nestest.nes
-        bus.rom.load("test roms/scanline.nes");
+        bus.rom.load("test roms/nestest.nes");
         cpu.reset();
-
     }
 
     public void clock() {
