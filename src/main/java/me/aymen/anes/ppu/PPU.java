@@ -194,9 +194,12 @@ public class PPU {
                 value = reg[OAM_ADDR];
                 break;
             case OAM_DATA:
-                // TODO implement increment to OAM_ADDR when not in vblank
+                // TODO implement the effect of returning internal data
+                //   when reading while ppu is rendering
                 value = oam[OAM_ADDR];
-                reg[OAM_ADDR] = (reg[OAM_ADDR] + 1) & 0xFF;
+                if(!getVerticalBlank()) {
+                    reg[OAM_ADDR] = (reg[OAM_ADDR] + 1) & 0xFF;
+                }
                 break;
             case PPU_SCROLL:
                 value = reg[PPU_SCROLL];
@@ -269,7 +272,16 @@ public class PPU {
                 // https://wiki.nesdev.com/w/index.php/PPU_programmer_reference#OAM_data_.28.242004.29_.3C.3E_read.2Fwrite
                 // for details.
                 reg[OAM_DATA] = value;
-                oam[reg[OAM_ADDR]] = value;
+                // Data is written only when not within pre-render and
+                // visible scanline, assuming background or sprite rendering
+                // is enabled
+                if (scanLine >= 240 & !renderEnabled()) {
+                    oam[reg[OAM_ADDR]] = value;
+                }
+                else {
+                    // TODO implement the glitch that modifies and bumps
+                    //  the high 6 bits of OAM_ADDR
+                }
                 reg[OAM_ADDR] = (reg[OAM_ADDR] + 1) & 0xFF;
                 break;
             case PPU_SCROLL:
@@ -281,7 +293,7 @@ public class PPU {
                     w:                  = 1
                   */
                 if(!ppu_w) {
-                    ppu_t.setCoarseX((value & 0xF8) >> 3);
+                    ppu_t.setCoarseX(value >> 3);
                     fineX = value & 0x7;
                     ppu_w = true;
                 }
@@ -291,8 +303,7 @@ public class PPU {
                     w:                  = 0
                  */
                 else {
-                    int coarseY = (value & 0xF8) >> 2;
-                    ppu_t.setCoarseY(coarseY);
+                    ppu_t.setCoarseY(value  >> 3);
                     ppu_t.setFineY(value);
                     ppu_w = false;
                 }
@@ -566,6 +577,14 @@ public class PPU {
     }
 
     /**
+     * Determine if vblank flag is set by retrieving PPU Status bit 7
+     * @return true if value equals 1
+     */
+    public boolean getVerticalBlank() {
+        return (reg[PPU_STATUS] & 0x80) == 0x80;
+    }
+
+    /**
      * Set PPU Status bit 7 to enable NMI
      * @param enable if true, sets bit 7 to 1, else sets it to 0
      */
@@ -582,9 +601,9 @@ public class PPU {
      * Only happens when rendering is enabled
      */
     public void incCoarseX() {
-//        if (!renderEnabled()) {
-//            return;
-//        }
+        if (!renderEnabled()) {
+            return;
+        }
 
         if (ppu_v.getCoarseX() == 31) {
             ppu_v.setCoarseX(0);
@@ -802,12 +821,13 @@ public class PPU {
 
         int paletteAddr =  currentAT[first + 1] << 1 | currentAT[first];
 
-        int lsByte = currentNT[shiftPos];
-        int msByte = currentNT[shiftPos + 8];
+        int bitPos = (shiftPos + fineX) & 0x7;
+        int lsByte = currentNT[bitPos];
+        int msByte = currentNT[bitPos + 8];
 
         int pixel = (msByte << 1) + lsByte;
 
-//        screen.setPixel(cycle - 1, scanLine, getPaletteColor(paletteAddr, pixel));
+        screen.setPixel(cycle - 1, scanLine, getPaletteColor(paletteAddr, pixel));
 
         // TODO DELETE SLEEP
 //        try {
@@ -863,15 +883,19 @@ public class PPU {
             atByte = getBaseNameTable() + 0x3C0
                     + ( (ppu_v.getCoarseY() & 0x1C) << 1 )
                     + ( (ppu_v.getCoarseX() & 0x1C) >> 2 );
+
+            // Increment to retrieve the next tile
+            incCoarseX();
             break;
         case 6:
-            // TODO explain
-            lowBGByte = bus.ppuRead(getBGPatternTableAddr() + ntByte * 16);
+            // TODO explain from
+            //   https://wiki.nesdev.com/w/index.php/PPU_programmer_reference#Addressing
+            lowBGByte = bus.ppuRead(getBGPatternTableAddr() + ntByte * 16 + ppu_v.getFineY());
             break;
         case 0:
             // TODO explain
             // TODO explain
-            highBGByte = bus.ppuRead(getBGPatternTableAddr() + ntByte * 16 + 8);
+            highBGByte = bus.ppuRead(getBGPatternTableAddr() + ntByte * 16 + ppu_v.getFineY() + 8);
             // shift name table registers
             currentNT = nextNT;
             nextNT = new int[BG_NT_SIZE];
@@ -894,9 +918,6 @@ public class PPU {
                 int bit = (attrb >> i) & 0x1;
                 nextAT[i] = bit;
             }
-
-            // Increment to retrieve the next tile
-            incCoarseX();
             break;
         }
     }
