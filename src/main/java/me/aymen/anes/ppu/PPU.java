@@ -61,7 +61,7 @@ public class PPU {
     public final int[] oam;
     public final int[] palette;      // Palette Memory
     private Screen screen;
-    private final ColorPalette colors;
+    public final ColorPalette colors;
     public int scanLine;
     public int cycle;
     private boolean complete;  // Indicates whole frame was drawn
@@ -178,17 +178,20 @@ public class PPU {
                 value = reg[PPU_MASK];
                 break;
             case PPU_STATUS:
-                // Reset address latch when status is read
-                ppu_w = false;
+                if (update) {
+                    // Reset address latch when status is read
+                    ppu_w = false;
+                    // Reset Vertical Blanking when status is read
+                    setVerticalBlank(false);
+                }
                 // TODO Check if this addition is important
                 // Reading status set internal value to be as in the line below,
                 // as being explained by Youtuber javidx9 in his video name:
                 // NES Emulator Part #4
                 // 0xE0 returns bits 7,6 5, while 0x1F handles the others from
                 // the stored buffer value
-                value = reg[PPU_STATUS] & 0xE0 | (ppu_buffer & 0x1F);
-                // Reset Vertical Blanking when status is read
-                setVerticalBlank(false);
+                value = (reg[PPU_STATUS] & 0xE0) | (ppu_buffer & 0x1F);
+
                 break;
             case OAM_ADDR:
                 value = reg[OAM_ADDR];
@@ -197,8 +200,10 @@ public class PPU {
                 // TODO implement the effect of returning internal data
                 //   when reading while ppu is rendering
                 value = oam[OAM_ADDR];
-                if(!getVerticalBlank()) {
-                    reg[OAM_ADDR] = (reg[OAM_ADDR] + 1) & 0xFF;
+                if (update) {
+                    if (!getVerticalBlank()) {
+                        reg[OAM_ADDR] = (reg[OAM_ADDR] + 1) & 0xFF;
+                    }
                 }
                 break;
             case PPU_SCROLL:
@@ -208,6 +213,14 @@ public class PPU {
                 value = reg[PPU_ADDR];
                 break;
             case PPU_DATA:
+
+                // Return the real value when no update is intentioned
+                // This is for when reading value from non instruction
+                // Used for debuging, deassembly and other internal needs
+                if(!update) {
+                    return bus.ppuRead(ppu_v.getValue());
+                }
+
                 // Return the buffered data
                 value = ppu_buffer;
                 ppu_buffer = bus.ppuRead(ppu_v.getValue());
@@ -221,9 +234,7 @@ public class PPU {
                 Pair<IO, Integer> pair = bus.ppuAccess(ppu_v.getValue());
 
                 // Reading from PPU_DATA lead to increment of ppu address
-                if (update) {
-                    ppu_v.increment(getIncrementMode());
-                }
+                ppu_v.increment(getIncrementMode());
 
                 // Check if palette address is accessed
                 if (pair.first == IO.PLTE) {
@@ -275,7 +286,7 @@ public class PPU {
                 // Data is written only when not within pre-render and
                 // visible scanline, assuming background or sprite rendering
                 // is enabled
-                if (scanLine >= 240 & !renderEnabled()) {
+                if (scanLine >= 240 && !renderEnabled()) {
                     oam[reg[OAM_ADDR]] = value;
                 }
                 else {
@@ -538,7 +549,7 @@ public class PPU {
      * positives exit.
      */
     public void setSpriteOverflow(boolean overflow) {
-        int value = overflow ? 0x20 : 0x20;
+        int value = overflow ? 0x20 : 0x00;
         reg[PPU_STATUS] |= value;
     }
 
@@ -558,7 +569,7 @@ public class PPU {
      * when a nonzero pixel of sprite 0 overlaps a nonzero background pixel
      */
     public void setSpriteZeroHit(boolean hit) {
-        int value = hit ? 0x40 : 0x40;
+        int value = hit ? 0x40 : 0x00;
         reg[PPU_STATUS] |= value;
     }
 
@@ -819,7 +830,7 @@ public class PPU {
             first = 6;
         }
 
-        int paletteAddr =  currentAT[first + 1] << 1 | currentAT[first];
+        int paletteAddr =  (currentAT[first + 1] << 1) | currentAT[first];
 
         int bitPos = (shiftPos + fineX) & 0x7;
         int lsByte = currentNT[bitPos];
@@ -827,14 +838,8 @@ public class PPU {
 
         int pixel = (msByte << 1) + lsByte;
 
-        screen.setPixel(cycle - 1, scanLine, getPaletteColor(paletteAddr, pixel));
+//        screen.setPixel(cycle - 1, scanLine, getPaletteColor(paletteAddr, pixel));
 
-        // TODO DELETE SLEEP
-//        try {
-//            Thread.sleep(10);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
 
         // Increment shift Registers
         incShift();
@@ -900,8 +905,8 @@ public class PPU {
             currentNT = nextNT;
             nextNT = new int[BG_NT_SIZE];
             for(int i = 0; i < 8; i++) {
-                nextNT[i] = (lowBGByte >> 7 - i) & 0x1;
-                nextNT[i + 8] = (highBGByte >> 7 - i) & 0x1;
+                nextNT[i] = ( lowBGByte >> (7 - i) ) & 0x1;
+                nextNT[i + 8] = ( highBGByte >> (7 - i) ) & 0x1;
             }
 
             // Shift attribute table registers

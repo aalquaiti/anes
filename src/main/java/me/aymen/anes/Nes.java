@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -30,12 +31,55 @@ public class Nes {
         bus.ppu.connect(screen);
 
         // TODO REMOVE these settings. Only used for testing nestest.nes
-        bus.rom.load("test roms/smb.nes");
+        bus.rom.load("test roms/dk.nes");
         cpu.reset();
     }
 
     public void clock() {
-        bus.clock();
+//        bus.clock();
+        for (int i = 0; i < 3; i++) {
+            ppu.clock();
+            // TODO remove this hack
+            if (ppu.cycle >= 1 && ppu.cycle <= 256 && ppu.scanLine >= 0
+                    && ppu.scanLine <= 239 && ppu.renderEnabled()) {
+                int coarseX = (ppu.cycle - 1) / 8;
+                int coarseY = ppu.scanLine / 8;
+                int fineX = (ppu.cycle - 1) % 8;
+                int fineY = ppu.scanLine % 8;
+                int offset = coarseX + coarseY * 32;
+//                int tileAddr = bus.ppuRead(ppu.getBaseNameTable() + offset);
+                int tileAddr = bus.vram.memory[offset];
+                int paletteAddr = bus.vram.memory[0x3C0 | ((coarseY >> 2) << 3) | ((coarseX >> 2))];
+//                int palette = bus.ppuRead(ppu.getBaseNameTable() | 0x3C0 | paletteOffset);
+
+
+                if ((coarseY & 0x2) != 0) {
+                    paletteAddr >>= 4;
+                }
+                if ((coarseX & 0x2) != 0) {
+                    paletteAddr >>= 2;
+                }
+                paletteAddr &= 0x3;
+//                int lsByte = bus.ppuRead(ppu.getBGPatternTableAddr() + tileAddr * 16 + fineY + 0);
+//                int msByte = bus.ppuRead(ppu.getBGPatternTableAddr() + tileAddr * 16 + fineY + 8);
+                int lsByte = bus.rom.chrMemory[0x1000 + tileAddr * 16 + fineY + 0];
+                int msByte = bus.rom.chrMemory[0x1000 + tileAddr * 16 + fineY + 8];
+                int lsBit = (lsByte >> (7 - fineX)) & 0x1;
+                int msBit = (msByte >> (7 - fineX)) & 0x1;
+                int pixel = (msBit << 1) + lsBit;
+                int palette = ppu.palette[(paletteAddr << 2) | pixel];
+                Color color = ppu.colors.color[palette];
+
+                screen.setPixel(ppu.cycle - 1, ppu.scanLine, color);
+            }
+        }
+
+        cpu.clock();
+
+        if (ppu.isNmi()) {
+            ppu.setNmi(false);
+            cpu.nmi();
+        }
 
         if (cpu.isComplete()) {
             ticks++;
@@ -49,7 +93,7 @@ public class Nes {
         }
 
 
-//        // TODO remove this hack
+        // TODO remove this hack
 //        if(ppu.cycle >= 1 && ppu.cycle <= 256 && ppu.scanLine >= 0 && ppu.scanLine <= 239 && ppu.renderEnabled()) {
 //
 //            for (int y = 0; y < 30; y++) {
@@ -90,7 +134,7 @@ public class Nes {
 ////                            } catch (InterruptedException e) {
 ////                                e.printStackTrace();
 ////                            }
-//                            screen.repaint();
+//                                        screen.repaint();
 //                        }
 //                    }
 //                }
@@ -101,7 +145,6 @@ public class Nes {
         if (ppu.isComplete()) {
             ppu.setComplete(false);
             screen.repaint();
-            System.out.println("found");
         }
     }
 
@@ -111,7 +154,7 @@ public class Nes {
             try {
                 clock();
             } catch(Exception e){
-                System.err.println(e.getCause());
+//                System.err.println(e);
                 e.printStackTrace();
             }
             i++;

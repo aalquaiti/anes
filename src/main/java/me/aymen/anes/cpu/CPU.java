@@ -30,7 +30,7 @@ public class CPU {
     // Used by executing instruction if needed
     // populated by appropriate addressing mode
     // Basically equals to op1 | (op2 << 8)
-    private int address;
+    protected int address;
     // Indicates cpu finished all cycles for an instruction
     private boolean complete;
 
@@ -514,7 +514,7 @@ public class CPU {
         status.P = P.clone();
         status.SP = SP;
         status.address = address;
-        status.value = address == -1 ? 0 : bus.cpuRead(address, false);
+        status.value = address == -1 ? 0 : bus.cpuRead(address);
 
         // Execute instruction
         opcode.operation.process();
@@ -725,7 +725,8 @@ public class CPU {
      * Arithmetic Shift left. Shifts memory content one bit left
      */
     public void aslM() {
-        int value = bus.cpuRead(address, true);
+        // cpuRead without update as that effect will be through write
+        int value = bus.cpuRead(address, false);
         bus.cpuWrite(asl(value), address);
     }
 
@@ -1043,7 +1044,8 @@ public class CPU {
      * Rotate Memory content Left through Carry
      */
     public void rolM() {
-        int value = bus.cpuRead(address, true);
+        // cpuRead without update as this is handled by write
+        int value = bus.cpuRead(address, false);
         bus.cpuWrite(rol(value), address);
     }
 
@@ -1058,7 +1060,8 @@ public class CPU {
      * Rotate Memory Content Right through Carry
      */
     public void rorM() {
-        int value = bus.cpuRead(address, true);
+        // cpuRead without update as this is handled by write
+        int value = bus.cpuRead(address, false);
         bus.cpuWrite(ror(value), address);
     }
 
@@ -1212,6 +1215,8 @@ public class CPU {
      * Performs INC followed by SBC
      */
     public void _isb() {
+        // TODO check if performing these two commands as separate might
+        //   affect ppu_v when reading at 0x2007
         inc();
         sbc();
     }
@@ -1460,7 +1465,8 @@ public class CPU {
      * @param cnt  Value content
      */
     public void addMemory(int cnt) {
-        int value = bus.cpuRead(address, true);
+        // cpuRead without update as this is handled by write
+        int value = bus.cpuRead(address, false);
         int result = (value + cnt) & 0xFF;
         bus.cpuWrite(result, address);
         P.setZNFlags(result);
@@ -1557,7 +1563,9 @@ public class CPU {
      * @return
      */
     public int pl() {
-        return bus.cpuRead(incSP());
+        // cpuRead without update so not to mess with ppu
+        // TODO check if that is wrong
+        return bus.cpuRead(incSP(), false);
     }
 
     /**
@@ -1590,7 +1598,7 @@ public class CPU {
      * @param val
      */
     private void st(int val) {
-        bus.cpuWrite(val, address, true);
+        bus.cpuWrite(val, address);
     }
 
     /**

@@ -83,16 +83,10 @@ public class Bus {
         }
     }
 
-    public void cpuWrite(int value, int address) {
-        cpuWrite(value, address, false);
-    }
-
     /**
      * Writes value to device according to address. See cpuAccess for details.
-     * @param value
-     * @param address
      */
-    public void cpuWrite(int value, int address, boolean update) {
+    public void cpuWrite(int value, int address) {
         Pair<IO, Integer> pair = cpuAccess(address);
 
         switch (pair.first) {
@@ -100,7 +94,7 @@ public class Bus {
                 ram.memory[pair.second] = value & 0xFF;
                 break;
             case PPU_IO:
-                ppu.write(value & 0xFF, pair.second, update);
+                ppu.write(value & 0xFF, pair.second, true);
                 break;
             case APU_IO:
                 // TODO implement

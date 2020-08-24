@@ -30,9 +30,9 @@ public class Cartridge {
     private final int HEADER_SIZE = 16;
     private byte header[];
     private byte trainer[];
-    private byte prgMemory[];
+    public byte prgMemory[];
     private int prgBank;
-    private byte chrMemory[];
+    public byte chrMemory[];
     private int chrBank;
     private int mapperType;
     private int mirroring;
@@ -191,15 +191,15 @@ public class Cartridge {
         // TODO implement mappers and proper mirroring mechanism
         // Horizontal
         if (mirroring == 0) {
-            address %= 0x800;
-        }
-        // Vertical
-        else {
             if (address < 0x800) {
                 address %= 0x400;
             } else {
                 address = (address % 0x400) + 0x400;
             }
+        }
+        // Vertical
+        else {
+            address %= 0x800;
         }
 
         return address;
