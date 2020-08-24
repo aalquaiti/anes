@@ -127,9 +127,13 @@ public class Cartridge {
     public int readPRG(int address) {
 
         // TODO implement access to other areas of PRG-ROM
-        if (prgBank == 1)
+        if (prgBank == 1) {
             // If there is only one prg rom bank
             address %= 0x4000;
+        }
+        else {
+            address %= 0x8000;
+        }
 
         // Return as unsigned byte
         return prgMemory[address] & 0xFF ;
@@ -201,6 +205,13 @@ public class Cartridge {
         else {
             address %= 0x800;
         }
+
+//        if (mirroring == 0) {
+//            if (address)
+//        }
+//        else {
+//
+//        }
 
         return address;
     }

@@ -60,17 +60,15 @@ public class Bus {
 
             case APU_IO:
                 // TODO implement
-                logger.error("Reading APU Register not supported");
-
+                return 0;
             case OAM_DMA:
                 // TODO implement
-                logger.error("Reading OAM_DMA not supported");
                 return 0;
 
             case PGR_ROM:
                 // Internally, the implementation of ROM starts at 0x0000
                 // so mod is used
-                return rom.readPRG(pair.second % 0x8000);
+                return rom.readPRG(pair.second);
 
             default:
                 // Should never happen
@@ -98,7 +96,6 @@ public class Bus {
                 break;
             case APU_IO:
                 // TODO implement
-                logger.error("Write to APU registers not supported");
                 break;
             case OAM_DMA:
                 // CPU Address to start copying 0xFF bytes from to OAM memory
@@ -170,7 +167,7 @@ public class Bus {
             // Repeat every 8 bytes
             // Address 0x2008 to 0x3FFF will mirror 0x2000 to 0x2007
             pair.first = IO.PPU_IO;
-            pair.second = address % 0x8;
+            pair.second = address & 0x7;
         }
 
         // 0x0000 - 0x07FF: RAM
@@ -241,7 +238,9 @@ public class Bus {
                 }
                 break;
             case PLTE:
-                ppu.palette[pair.second] = value;
+                // Palette only stores values 0 and 63
+                // Which reflects the color range of the NES color palette
+                ppu.palette[pair.second] = value & 0x3F;
                 break;
             default:
                 // Should never happen
@@ -268,23 +267,21 @@ public class Bus {
         validBoundary(address);
 
         // 0x4000 - 0xFFFF: Mirrors 0x0000 to 0x3FFF
-        address %= 0x4000;
+        address &= 0x3FFF;
 
         // 0x3F00 - 0x3FFF: Palettes (PPU Internal Memory)
         if (address >= 0x3F00) {
 
             // 0x3F20 - 0x3FFF: Mirrors 0x3F00 to 0x3F19
-            address %= 0x20;
-            // Color at 0x3F00 is the background which is mirrored every four
-            // bytes. This affects addresses 0x3F04, 0x3F08, 0x3F0C, 0x3F10,
-            // 0x3F14, 0x3F18, 0x3F1C
-            if (address == 0x04) address = 0x00;
-            if (address == 0x08) address = 0x00;
-            if (address == 0x0C) address = 0x00;
+            address &= 0x1F;
+            // Color at 0x3F00 is the background color. Values 0x3F04, 0x3F08,
+            // 0x3F0C are mirrored at 0x3F10, 0x3F14, 0x3F18, 0x3F1C
+
+            // The following addresses
             if (address == 0x10) address = 0x00;
-            if (address == 0x14) address = 0x00;
-            if (address == 0x18) address = 0x00;
-            if (address == 0x1C) address = 0x00;
+            if (address == 0x14) address = 0x04;
+            if (address == 0x18) address = 0x08;
+            if (address == 0x1C) address = 0x0C;
 
             pair.first = IO.PLTE;
             pair.second = address;
@@ -303,7 +300,7 @@ public class Bus {
             // through cartridge could extend this to access additional memory.
             // This is why further cartridge mapping happens in ppuRead and
             // ppuWrite methods
-            pair.second = address % 0x1000;
+            pair.second = address & 0xFFF;
         }
 
         // 0x0000 - 0x1FFF: Pattern Tables
