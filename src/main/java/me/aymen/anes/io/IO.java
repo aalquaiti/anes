@@ -7,8 +7,9 @@ public enum IO {
 
     // Accessible through CPU
     RAM,
-    PPU_IO,
-    APU_IO,
+    PPU,
+    PAD,
+    APU,
     OAM_DMA,
     PGR_ROM,
 

@@ -2,6 +2,7 @@ package me.aymen.anes.ppu;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyListener;
 
 /**
  * Represents Screen that output NES graphics received from PPU
@@ -78,5 +79,9 @@ public class Screen extends JPanel {
                 g.fillRect(x * widthScale, y * heightScale, widthScale, heightScale);
             }
         }
+    }
+
+    public void setKeyListener(KeyListener listener) {
+        gui.addKeyListener(listener);
     }
 }

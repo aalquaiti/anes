@@ -22,15 +22,6 @@ public class PPU {
     public final static int REG_SIZE = 8;
     public final static int OAM_SIZE = 0xFF;
     public final static int PALETTE_SIZE = 0x20;
-    /**
-     * Background Pattern Table 16-bit Shift register
-     */
-    public final static int BG_NT_SIZE = 16;
-
-    /**
-     * Background Pattern Table 8-bit Shift register
-     */
-    public final static int BG_AT_SIZE = 8;
 
     // Registers
     // For details:
@@ -247,7 +238,7 @@ public class PPU {
      * Write value to a register. Depending on Register, this might lead to
      * writing value to other devices (e.g. vram)
      */
-    public void write(int value, int address, boolean update) {
+    public void write(int value, int address) {
         switch (address) {
             case PPU_CTRL:
                 reg[PPU_CTRL] = value;
@@ -345,9 +336,7 @@ public class PPU {
                 reg[PPU_DATA] = value;
 
                 // Writing to PPU_DATA lead to increment of ppu address
-                if(update) {
-                    ppu_v.increment(getIncrementMode());
-                }
+                ppu_v.increment(getIncrementMode());
                 break;
             default:
                 // Should never happen
@@ -741,7 +730,7 @@ public class PPU {
             // Cycle 321 to 336
             // Fetch first two tiles for the new forthcoming scanline
             // Initialise Background Registers (every 8 cycles)
-            if (cycle >= 321 && cycle <= 340) {
+            if (cycle >= 321 && cycle <= 336) {
                 evaluateBGRegisters();
             }
 
@@ -801,8 +790,7 @@ public class PPU {
 
         int pixel = (msByte << 1) + lsByte;
 
-        screen.setPixel(cycle - 1, scanLine, getPaletteColor(nextAT, pixel));
-
+        screen.setPixel(cycle - 1, scanLine, getPaletteColor(currentAT, pixel));
 
         // shift registers
         currentNT = (currentNT << 1) & 0xFFFF;
@@ -858,24 +846,34 @@ public class PPU {
         case 3:
             // TODO explain
             // TODO change name into something descriptive
-            nextATBits = getBaseNameTable() + 0x3C0
-                    + ((ppu_v.getCoarseY() & 0x1C) << 1)
-                    + ((ppu_v.getCoarseX() & 0x1C) >> 2);
+            nextATBits = bus.ppuRead( getBaseNameTable() + 0x3C0
+                            + ((ppu_v.getCoarseY() & 0x1C) << 1)
+                            + (ppu_v.getCoarseX()  >> 2));
+
+//            nextATBits = bus.ppuRead(0x23C0 | (ppu_v.getVerticalNameTable() << 11)
+//                            | (ppu_v.getHorizontalNameTable() << 10)
+//                            | ((ppu_v.getCoarseY() >> 2) << 3)
+//                            | ((ppu_v.getCoarseX() >> 2)));
 
             // Determine what is attribute bits (2 bits) that belongs to
-            // the next tile fetched
+            // the next tile fetched.
+            // Attribute value is shared between 32x32 pixels, which is
+            // 4x4 tiles.
             // Top left:    0-1
             // Top Right:   2-3
             // Bottom Left: 4-5
             // Bott Right:  6-7
             // This can be obtained by looking into CoarseX and CoarseY
             // as follows
-            if (ppu_v.getCoarseX() % 4 < 2) {
-                nextATBits >>= 2;
-            }
-            if (ppu_v.getCoarseY() % 4 < 2) {
+            // If Bottom
+            if ((ppu_v.getCoarseY() % 4) < 2) {
                 nextATBits >>= 4;
             }
+            // If Right
+            if ((ppu_v.getCoarseX() %4) < 2) {
+                nextATBits >>= 2;
+            }
+
             // The first two bits will now contain what is needed
             nextATBits &=0x3;
             break;
@@ -900,11 +898,7 @@ public class PPU {
 
         // shift name table registers
         currentNT = nextNT;
-        if(lowBGByte != 0 && highBGByte != 0 ) {
-            System.out.println("Found it");
-        }
-        nextNT = lowBGByte << 8;
-        nextNT += highBGByte;
+        nextNT = (lowBGByte << 8) | highBGByte;
 
         // Shift attribute table registers
         currentAT = nextAT;

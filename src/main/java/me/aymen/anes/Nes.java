@@ -2,6 +2,9 @@ package me.aymen.anes;
 
 import me.aymen.anes.cpu.CPU;
 import me.aymen.anes.io.Bus;
+import me.aymen.anes.io.controls.GamePad;
+import me.aymen.anes.io.controls.KeyboardPad;
+import me.aymen.anes.io.controls.NoPad;
 import me.aymen.anes.ppu.PPU;
 import me.aymen.anes.ppu.Screen;
 import me.aymen.anes.util.DeAssembler;
@@ -30,13 +33,19 @@ public class Nes {
         deAssmb = new DeAssembler(bus);
         bus.ppu.connect(screen);
 
+        // TODO make these settings dynamic
+        KeyboardPad pad1 = new KeyboardPad(bus.controller);
+        GamePad pad2 = new NoPad();
+        bus.controller.setPad1(pad1);
+        bus.controller.setPad2(pad2);
+
         // TODO REMOVE these settings. Only used for testing nestest.nes
-        bus.rom.load("test roms/smb.nes");
+        bus.rom.load("test roms/nestest.nes");
         cpu.reset();
     }
 
     public void clock() {
-//        bus.clock();
+        bus.clock();
 //        for (int i = 0; i < 3; i++) {
 //            ppu.clock();
 //            // TODO remove this hack
@@ -55,10 +64,10 @@ public class Nes {
 //
 //
 //
-//                if ((coarseY & 0x2) != 0) {
+//                if ((coarseY % 4) < 2) {
 //                    paletteAddr >>= 4;
 //                }
-//                if ((coarseX & 0x2) != 0) {
+//                if ((coarseX % 4) < 2) {
 //                    paletteAddr >>= 2;
 //                }
 //                paletteAddr &= 0x3;
@@ -82,17 +91,18 @@ public class Nes {
 //            ppu.setNmi(false);
 //            cpu.nmi();
 //        }
-
-        if (cpu.isComplete()) {
-            ticks++;
-            String ppuStatus = String.format("\tPPU: %03d, %03d  v: $%04X  " +
-                            "t: $%04X", ppu.scanLine, ppu.cycle,
-                    ppu.ppu_v.getValue(), ppu.ppu_t.getValue());
-            String message = String.format("Tick: %05d %-50s%s", ticks,
-                    deAssmb.analyse(cpu.getStatus()),
-                    deAssmb.showStatus(cpu.getStatus(), ppuStatus));
-            System.out.println(message);
-        }
+//
+//        if (cpu.isComplete()) {
+//            ticks++;
+//            String ppuStatus = String.format("\tPPU: %03d, %03d  v: $%04X  " +
+//                            "t: $%04X  R:%d", ppu.scanLine, ppu.cycle,
+//                    ppu.ppu_v.getValue(), ppu.ppu_t.getValue(),
+//                    ppu.renderEnabled()? 1: 0);
+//            String message = String.format("Tick: %05d %-50s%s", ticks,
+//                    deAssmb.analyse(cpu.getStatus()),
+//                    deAssmb.showStatus(cpu.getStatus(), ppuStatus));
+//            System.out.println(message);
+//        }
 
 
 //        // TODO remove this hack

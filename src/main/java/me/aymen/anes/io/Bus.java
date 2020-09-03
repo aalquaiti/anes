@@ -1,6 +1,7 @@
 package me.aymen.anes.io;
 
 import me.aymen.anes.cpu.CPU;
+import me.aymen.anes.io.controls.Controller;
 import me.aymen.anes.ppu.PPU;
 import me.aymen.anes.util.Pair;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class Bus {
     public final RAM ram;
     public final VRAM vram;
     public final Cartridge rom;
+    public final Controller controller;
 
     public Bus() {
         ram = new RAM();
@@ -31,6 +33,7 @@ public class Bus {
         rom = new Cartridge();
         cpu = new CPU(this);
         ppu = new PPU(this);
+        controller = new Controller();
     }
 
     /**
@@ -55,10 +58,13 @@ public class Bus {
             case RAM:
                 return ram.memory[pair.second];
 
-            case PPU_IO:
+            case PPU:
                 return ppu.read(pair.second, update);
 
-            case APU_IO:
+            case PAD:
+                return controller.read(address);
+
+            case APU:
                 // TODO implement
                 return 0;
             case OAM_DMA:
@@ -91,10 +97,13 @@ public class Bus {
             case RAM:
                 ram.memory[pair.second] = value & 0xFF;
                 break;
-            case PPU_IO:
-                ppu.write(value & 0xFF, pair.second, true);
+            case PPU:
+                ppu.write(value & 0xFF, pair.second);
                 break;
-            case APU_IO:
+            case PAD:
+                controller.write(value, address);
+                break;
+            case APU:
                 // TODO implement
                 break;
             case OAM_DMA:
@@ -110,7 +119,7 @@ public class Bus {
                 }
                 // It takes 513 or 514 cycles to copy data from cpu to ppu
                 // The +1 happens on an odd cpu cycle
-
+                // TODO add at odd cpu cycle
                 cpu.addCycles(512);
                 break;
             case PGR_ROM:
@@ -133,7 +142,7 @@ public class Bus {
      * 0x2000 - 0x2007: PPU IO Registers (additionally 0x4014)
      * 0x2008 - 0x3FFF: Mirroring PPU IO Registers
      * 0x4000 - 0x401F: APU IO Registers (Except for 0x4014, which belongs
-     *                  to PPU)
+     *                  to PPU, 0x4016-7 for Game Pad and expansion slot)
      * 0x4020 - 0xFFFF: Program ROM
      * @param address Address to access
      * @return Enum of device name and address
@@ -149,6 +158,12 @@ public class Bus {
             pair.second = address;
         }
 
+        // Game Pad at 0x4016 and 0x4017
+        else if (address == 0x4016 || address == 0x4017) {
+            pair.first = IO.PAD;
+            pair.second = address;
+        }
+
         // OAM_DMA at 0x4014 (PPU Register used for Data Management access)
         else if (address == 0x4014) {
             pair.first = IO.OAM_DMA;
@@ -157,7 +172,7 @@ public class Bus {
 
         // 0x4000 - 0x401F: APU IO Registers
         else if ( address >= 0x4000) {
-            pair.first = IO.APU_IO;
+            pair.first = IO.APU;
             pair.second = address;
         }
 
@@ -166,7 +181,7 @@ public class Bus {
         else if ( address >= 0x2000) {
             // Repeat every 8 bytes
             // Address 0x2008 to 0x3FFF will mirror 0x2000 to 0x2007
-            pair.first = IO.PPU_IO;
+            pair.first = IO.PPU;
             pair.second = address & 0x7;
         }
 
@@ -272,12 +287,10 @@ public class Bus {
         // 0x3F00 - 0x3FFF: Palettes (PPU Internal Memory)
         if (address >= 0x3F00) {
 
-            // 0x3F20 - 0x3FFF: Mirrors 0x3F00 to 0x3F19
+            // 0x3F20 - 0x3FFF: Mirrors 0x3F00 to 0x3F1F
             address &= 0x1F;
             // Color at 0x3F00 is the background color. Values 0x3F04, 0x3F08,
             // 0x3F0C are mirrored at 0x3F10, 0x3F14, 0x3F18, 0x3F1C
-
-            // The following addresses
             if (address == 0x10) address = 0x00;
             if (address == 0x14) address = 0x04;
             if (address == 0x18) address = 0x08;
@@ -328,6 +341,10 @@ public class Bus {
      * Executes one clock cycle (Hertz) for the system.
      */
     public void clock() {
+
+        // Check if any button is pressed
+        controller.update();
+
         // PPU clock runs three times faster than cpu due to Johnson counter
         // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
         // TODO move this function to be part of bus clock as this helps
